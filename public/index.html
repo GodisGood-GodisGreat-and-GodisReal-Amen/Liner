@@ -1,0 +1,732 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Liner</title>
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon.png" type="image/png" sizes="64x64">
+<link rel="apple-touch-icon" href="apple-touch-icon.png" sizes="180x180">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<svg class="sprite" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="i-plus" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10"/></symbol>
+  <symbol id="i-play" viewBox="0 0 16 16"><path class="fill" d="M5.2 3.2a.6.6 0 0 1 .9-.5l7 4.8a.6.6 0 0 1 0 1l-7 4.8a.6.6 0 0 1-.9-.5z"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 16 16"><path class="fill" d="M4.5 3h2.2a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5H4.5a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5zm4.8 0h2.2a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5H9.3a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5z"/></symbol>
+  <symbol id="i-close" viewBox="0 0 16 16"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7"/></symbol>
+  <symbol id="i-grip" viewBox="0 0 16 16"><path class="fill" d="M5.5 3.2a1.2 1.2 0 1 1 0 2.4 1.2 1.2 0 0 1 0-2.4zm5 0a1.2 1.2 0 1 1 0 2.4 1.2 1.2 0 0 1 0-2.4zm-5 3.6a1.2 1.2 0 1 1 0 2.4 1.2 1.2 0 0 1 0-2.4zm5 0a1.2 1.2 0 1 1 0 2.4 1.2 1.2 0 0 1 0-2.4zm-5 3.6a1.2 1.2 0 1 1 0 2.4 1.2 1.2 0 0 1 0-2.4zm5 0a1.2 1.2 0 1 1 0 2.4 1.2 1.2 0 0 1 0-2.4z"/></symbol>
+  <symbol id="i-undo" viewBox="0 0 16 16"><path class="stroke" d="M6.2 4.6 3 7.8l3.2 3.2"/><path class="stroke" d="M3.3 7.8h5.9a3.4 3.4 0 0 1 0 6.8H7.6"/></symbol>
+  <symbol id="i-redo" viewBox="0 0 16 16"><path class="stroke" d="m9.8 4.6 3.2 3.2-3.2 3.2"/><path class="stroke" d="M12.7 7.8H6.8a3.4 3.4 0 0 0 0 6.8h1.6"/></symbol>
+  <symbol id="i-video" viewBox="0 0 16 16"><path class="stroke" d="M2.5 4.5h8a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1h-8a1 1 0 0 1-1-1v-5a1 1 0 0 1 1-1z"/><path class="stroke" d="M11.5 7.2l3-1.7v5l-3-1.7"/></symbol>
+  <symbol id="i-image" viewBox="0 0 16 16"><rect x="2.5" y="3" width="11" height="10" rx="2"/><path d="M2.5 10.5l3-3 2.5 2.5 1.5-1.5 4 4"/><circle cx="10.5" cy="6" r="1"/></symbol>
+  <symbol id="i-chevron" viewBox="0 0 16 16"><path d="M4.5 6.5L8 10l3.5-3.5"/></symbol>
+  <symbol id="i-check" viewBox="0 0 16 16"><path d="M3.5 8.5l3 3 6-7"/></symbol>
+  <symbol id="i-warning" viewBox="0 0 16 16"><path d="M8 2.8l5.6 9.7a.6.6 0 0 1-.5.9H2.9a.6.6 0 0 1-.5-.9zM8 6.5v3.2"/><circle class="fill" cx="8" cy="11.6" r=".7"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 16 16"><path d="M2 5a1.5 1.5 0 0 1 1.5-1.5h2.6l1.5 1.5h5A1.5 1.5 0 0 1 14 6.5v5A1.5 1.5 0 0 1 12.5 13h-9A1.5 1.5 0 0 1 2 11.5z"/></symbol>
+  <symbol id="i-export" viewBox="0 0 16 16"><path d="M8 10V2.8M4.8 6l3.2-3.2L11.2 6M3 10.5v1A1.5 1.5 0 0 0 4.5 13h7a1.5 1.5 0 0 0 1.5-1.5v-1"/></symbol>
+  <symbol id="i-music" viewBox="0 0 16 16"><path d="M6 12.3V3.8l7.5-1.3v8.3"/><circle cx="4" cy="12.3" r="2"/><circle cx="11.5" cy="10.8" r="2"/></symbol>
+  <symbol id="i-spinner" viewBox="0 0 16 16"><path d="M8 2.5a5.5 5.5 0 0 1 5.5 5.5"/></symbol>
+  <symbol id="i-reset" viewBox="0 0 16 16"><path d="M3.2 8a4.8 4.8 0 1 0 1.4-3.4M3 2.8v2.5h2.5"/></symbol>
+  <symbol id="i-open" viewBox="0 0 16 16"><path d="M9.5 3H13v3.5M13 3L7.5 8.5M11 9.5v2A1.5 1.5 0 0 1 9.5 13h-5A1.5 1.5 0 0 1 3 11.5v-5A1.5 1.5 0 0 1 4.5 5h2"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 16 16"><path d="M3 8h9.5M9 4.5L12.5 8 9 11.5"/></symbol>
+  <symbol id="i-liner" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="lnTile" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5468c8"/><stop offset="0.55" stop-color="#6b3f8e"/><stop offset="1" stop-color="#8e3a60"/>
+    </linearGradient>
+    <linearGradient id="lnRim" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.34"/><stop offset="0.5" stop-color="#ffffff" stop-opacity="0.04"/><stop offset="1" stop-color="#000000" stop-opacity="0.12"/>
+    </linearGradient>
+    <filter id="lnGlow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="0.9"/></filter>
+    <mask id="lnCut" maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64"><rect width="64" height="64" fill="#fff"/><circle cx="32.00" cy="9.00" r="12.30" fill="#000"/><circle cx="51.92" cy="43.50" r="12.30" fill="#000"/><circle cx="12.08" cy="43.50" r="12.30" fill="#000"/></mask>
+  </defs>
+  <g mask="url(#lnCut)">
+    <circle cx="32" cy="32" r="23" fill="none" stroke="url(#lnTile)" stroke-width="10"/>
+    <circle cx="32" cy="32" r="23" fill="none" stroke="url(#lnRim)" stroke-width="10"/>
+  </g>
+  <g fill="currentColor" fill-opacity="0.5" filter="url(#lnGlow)"><circle cx="32.00" cy="9.00" r="7.1"/><circle cx="51.92" cy="43.50" r="7.1"/><circle cx="12.08" cy="43.50" r="7.1"/></g>
+  <g fill="#ffffff"><circle cx="32.00" cy="9.00" r="6.8"/><circle cx="51.92" cy="43.50" r="6.8"/><circle cx="12.08" cy="43.50" r="6.8"/></g>
+  </symbol>
+  <symbol id="i-sparkles" viewBox="0 0 16 16"><path class="fill" d="M7.5 2.2a.5.5 0 0 1 .95 0l1.1 3.05 3.05 1.1a.5.5 0 0 1 0 .95l-3.05 1.1-1.1 3.05a.5.5 0 0 1-.95 0l-1.1-3.05L3.35 7.3a.5.5 0 0 1 0-.95l3.05-1.1zM12.3 10.2a.35.35 0 0 1 .66 0l.5 1.34 1.34.5a.35.35 0 0 1 0 .66l-1.34.5-.5 1.34a.35.35 0 0 1-.66 0l-.5-1.34-1.34-.5a.35.35 0 0 1 0-.66l1.34-.5z"/></symbol>
+  <symbol id="i-search" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.2"/><path d="M10.2 10.2L13.5 13.5"/></symbol>
+  <symbol id="i-marker-arrow" viewBox="0 0 16 16"><path d="M2.5 8h10.5M9 4l4 4-4 4"/></symbol>
+  <symbol id="i-marker-triangle" viewBox="0 0 16 16"><path class="fill" d="M4.6 3.4a.8.8 0 0 1 1.2-.7l7 4.6a.8.8 0 0 1 0 1.4l-7 4.6a.8.8 0 0 1-1.2-.7z"/></symbol>
+  <symbol id="i-scissors" viewBox="0 0 16 16"><circle cx="4.5" cy="4" r="2"/><circle cx="4.5" cy="12" r="2"/><path d="M6.2 5.2L13.5 12M6.2 10.8L13.5 4M6.2 5.2l2.3 2.3M6.2 10.8l2.3-2.3"/></symbol>
+  <symbol id="i-volume" viewBox="0 0 16 16"><path class="fill" d="M2.5 6.2a.7.7 0 0 1 .7-.7h2l3.2-2.6a.5.5 0 0 1 .8.4v9.4a.5.5 0 0 1-.8.4L5.2 10.5h-2a.7.7 0 0 1-.7-.7z"/><path d="M11 5.6a3.4 3.4 0 0 1 0 4.8M12.8 3.8a5.9 5.9 0 0 1 0 8.4"/></symbol>
+  <symbol id="i-volume-off" viewBox="0 0 16 16"><path class="fill" d="M2.5 6.2a.7.7 0 0 1 .7-.7h2l3.2-2.6a.5.5 0 0 1 .8.4v9.4a.5.5 0 0 1-.8.4L5.2 10.5h-2a.7.7 0 0 1-.7-.7z"/><path d="M11 6.2l3.4 3.6M14.4 6.2L11 9.8"/></symbol>
+  <symbol id="i-expand" viewBox="0 0 16 16"><path d="M9.5 2.5H13.5v4M13.5 2.5L9 7M6.5 13.5H2.5v-4M2.5 13.5L7 9"/></symbol>
+  <symbol id="i-collapse" viewBox="0 0 16 16"><path d="M13 7H9V3M9 7l4.5-4.5M3 9h4v4M7 9l-4.5 4.5"/></symbol>
+  <symbol id="i-keyboard" viewBox="0 0 16 16"><rect x="1.5" y="4" width="13" height="8.5" rx="1.8"/><path d="M4 7h.01M6.5 7h.01M9 7h.01M11.5 7h.01M4 9.5h.01M6 9.5h4M11.5 9.5h.01"/></symbol>
+  <symbol id="i-stack" viewBox="0 0 16 16"><path d="M2.5 5.5L8 2.8l5.5 2.7L8 8.2zM2.5 8.3L8 11l5.5-2.7M2.5 11L8 13.7l5.5-2.7"/></symbol>
+  <symbol id="i-dancer" viewBox="0 0 16 16"><circle cx="8.6" cy="3" r="1.5"/><path d="M8.3 5.3L7.8 9.6M7.8 9.6l-2.6 3.6M7.8 9.6l2.9 3.2M8.1 6.6l3.6-2.4M8.1 6.6L4.3 8.3"/></symbol>
+  <symbol id="i-more" viewBox="0 0 16 16"><circle class="fill" cx="3.5" cy="8" r="1.3"/><circle class="fill" cx="8" cy="8" r="1.3"/><circle class="fill" cx="12.5" cy="8" r="1.3"/></symbol>
+  <symbol id="i-link" viewBox="0 0 16 16"><path d="M6.8 9.2a3 3 0 0 0 4.2 0l1.9-1.9a3 3 0 0 0-4.2-4.2l-.9.9"/><path d="M9.2 6.8a3 3 0 0 0-4.2 0L3.1 8.7a3 3 0 0 0 4.2 4.2l.9-.9"/></symbol>
+</svg>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark"><svg class="liner-mark" viewBox="0 0 64 64" aria-hidden="true"><use href="#i-liner"/></svg></span>
+    <span class="brand-name">Liner</span>
+  </div>
+  <div class="topbar-center">
+    <input id="projectTitle" class="title-input" type="text" placeholder="Untitled mix" spellcheck="false" autocomplete="off" maxlength="80" aria-label="Mix title">
+    <button class="btn btn-icon title-menu" id="mixesBtn" aria-label="Mixes" data-tip="Your mixes"><svg><use href="#i-stack"/></svg></button>
+  </div>
+  <div class="topbar-right">
+    <div class="history" role="group" aria-label="Undo and redo">
+      <button class="btn btn-icon" id="undoBtn" disabled aria-label="Undo" data-tip="Nothing to undo"><svg><use href="#i-undo"/></svg></button>
+      <button class="btn btn-icon" id="redoBtn" disabled aria-label="Redo" data-tip="Nothing to redo"><svg><use href="#i-redo"/></svg></button>
+    </div>
+    <button class="btn btn-icon" id="helpBtn" aria-label="Keyboard shortcuts" data-tip="Shortcuts (?)"><svg><use href="#i-keyboard"/></svg></button>
+    <button id="exportBtn" class="btn btn-primary" data-tip="Export the video (⌘E)"><svg><use href="#i-export"/></svg>Export</button>
+  </div>
+</header>
+
+<main class="workspace">
+  <aside class="panel panel-tracks" id="tracksPanel">
+    <div class="panel-head">
+      <h2>Tracks</h2>
+      <span class="panel-meta" id="tracksMeta"></span>
+      <button class="btn btn-icon" id="orderBtn" aria-label="Order the songs" data-tip="Sort, reverse or shuffle"><svg><use href="#i-more"/></svg></button>
+      <button class="btn btn-icon" id="findAllBtn" aria-label="Find cover art for every song" data-tip="Find cover art for every song"><svg><use href="#i-sparkles"/></svg></button>
+      <button class="btn btn-icon" id="linkBtn" aria-label="Add from a link" data-tip="Add from a link"><svg><use href="#i-link"/></svg></button>
+      <button class="btn btn-icon" id="addBtn" aria-label="Add songs" data-tip="Add songs"><svg><use href="#i-plus"/></svg></button>
+    </div>
+    <div class="track-scroll" id="trackScroll">
+      <ol class="track-list" id="trackList"></ol>
+      <div class="empty" id="tracksEmpty">
+        <div class="empty-art"><svg><use href="#i-music"/></svg></div>
+        <p class="empty-title">No songs yet</p>
+        <p class="empty-sub">Drop audio files anywhere in the window, pick them from your library, or paste a YouTube or SoundCloud link.</p>
+        <div class="empty-actions"><button class="btn btn-secondary" id="addBtn2">Add songs</button><button class="btn btn-secondary" id="linkBtn2"><svg><use href="#i-link"/></svg>From a link</button></div>
+        <p class="empty-formats">MP3 · FLAC · WAV · AIFF · M4A · OGG · or the sound of a video</p>
+      </div>
+    </div>
+    <div class="drop-hint" id="dropHint" aria-hidden="true"><div class="drop-hint-card"><svg><use href="#i-plus"/></svg><span>Drop to add</span></div></div>
+    <input type="file" id="fileInput" accept="audio/*,video/*,.mp3,.flac,.wav,.aif,.aiff,.m4a,.aac,.ogg,.opus,.wma,.caf,.mp4,.m4v,.mov,.webm,.mkv" multiple hidden>
+    <input type="file" id="coverInput" accept="image/*" hidden>
+    <div class="resize-handle" data-panel="tracks" title="Drag to resize · double-click to reset"></div>
+    <input type="file" id="dancerInput" accept="image/*,video/*,.gif,.png,.apng,.webp,.jpg,.jpeg,.mp4,.m4v,.mov,.webm" multiple hidden>
+    <input type="file" id="logoInput" accept="image/*" hidden>
+    <input type="file" id="videoInput" accept="video/*,.mp4,.m4v,.mov,.webm,.mkv,.avi,.gif,.mpg,.mpeg,.ts,.m2ts,.wmv,.ogv" hidden>
+    <input type="file" id="songVideoInput" accept="video/*,.mp4,.m4v,.mov,.webm,.mkv,.avi,.gif,.mpg,.mpeg,.ts,.m2ts,.wmv,.ogv" hidden>
+  </aside>
+
+  <section class="stage">
+    <div class="stage-frame" id="stageFrame">
+      <div class="preview" id="preview"><canvas id="previewCanvas"></canvas><div class="drag-hint" id="vizHandle" hidden><span>Drag to move</span></div><div class="snap-v" id="snapV" hidden></div><div class="snap-h" id="snapH" hidden></div></div>
+    </div>
+    <div class="transport">
+      <button class="play" id="playBtn" aria-label="Play" data-tip="Play (Space)">
+        <svg class="ic-play"><use href="#i-play"/></svg>
+        <svg class="ic-pause"><use href="#i-pause"/></svg>
+      </button>
+      <span class="time" id="timeNow">0:00</span>
+      <div class="scrubber" id="scrubber" role="slider" aria-label="Position" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0" tabindex="0">
+        <canvas id="scrubCanvas"></canvas>
+        <div class="scrub-knob" id="scrubKnob"></div>
+        <div class="scrub-tip" id="scrubTip"><b></b><span></span></div>
+      </div>
+      <span class="time" id="timeTotal">0:00</span>
+      <div class="volume" id="volume">
+        <button class="btn btn-icon" id="muteBtn" aria-label="Mute" data-tip="Mute (M)"><svg class="ic-on"><use href="#i-volume"/></svg><svg class="ic-off"><use href="#i-volume-off"/></svg></button>
+        <input type="range" id="volumeRange" min="0" max="1" step="0.02" aria-label="Preview volume">
+      </div>
+      <span class="chip" id="formatChip">1080p · 30 fps</span>
+      <button class="btn btn-icon" id="theatreBtn" aria-label="Expand the preview" data-tip="Expand preview (F)"><svg class="ic-expand"><use href="#i-expand"/></svg><svg class="ic-collapse"><use href="#i-collapse"/></svg></button>
+    </div>
+  </section>
+
+  <aside class="panel panel-inspector">
+    <div class="resize-handle resize-handle-left" data-panel="inspector" title="Drag to resize · double-click to reset"></div>
+    <nav class="tabs" role="tablist">
+      <button role="tab" data-tab="look" aria-selected="true">Look</button>
+      <button role="tab" data-tab="dancers" aria-selected="false">Dancers<span class="tab-badge" id="dancersBadge" hidden></span></button>
+      <button role="tab" data-tab="output" aria-selected="false">Output</button>
+      <span class="tab-ink" id="tabInk"></span>
+    </nav>
+    <div class="panel-scroll">
+      <div class="tab-pane" data-pane="look">
+        <section class="group">
+          <h3 class="group-title">Presets</h3>
+          <div class="presets" id="presets">
+            <button type="button" class="preset" data-preset="midnight" data-tip="Aurora, boxes, white marker"><span class="preset-swatch" style="--a:#3b4a7a;--b:#7a3b5e"></span>Midnight</button>
+            <button type="button" class="preset" data-preset="vinyl" data-tip="Softened cover, serif, lines, album colour"><span class="preset-swatch" style="--a:#8a5a2b;--b:#2b2d42"></span>Vinyl</button>
+            <button type="button" class="preset" data-preset="studio" data-tip="Ink, mono, compact, still"><span class="preset-swatch" style="--a:#2a2a30;--b:#101012"></span>Studio</button>
+            <button type="button" class="preset" data-preset="neon" data-tip="Aurora, album colour, glow, round"><span class="preset-swatch" style="--a:#2de2e6;--b:#7b2ff7"></span>Neon</button>
+          </div>
+          <p class="hint">Starting points. Everything below stays adjustable.</p>
+        </section>
+        <section class="group" id="composition">
+          <h3 class="group-title">Composition</h3>
+          <div class="seg seg-wide" data-seg="look.balance" role="radiogroup" aria-label="Composition">
+            <button type="button" data-value="balanced">Balanced</button>
+            <button type="button" data-value="exact">As set</button>
+            <span class="seg-thumb"></span>
+          </div>
+          <p class="hint">Balanced keeps the music and artwork in front: when several extras are on, the logo, captions, labels and visualizer step back a little, the visualizer softens while dancers are on screen, captions get a soft backing over busy areas, extras arrive a beat after the main picture, and new captions land in empty space. As set draws everything exactly as its sliders say.</p>
+        </section>
+        <section class="group">
+          <h3 class="group-title">Background</h3>
+          <div class="seg seg-wide" data-seg="look.style" role="radiogroup" aria-label="Background style">
+            <button type="button" data-value="aurora">Aurora</button>
+            <button type="button" data-value="cover">Cover</button>
+            <button type="button" data-value="ink">Ink</button>
+            <button type="button" data-value="video">Video</button>
+            <span class="seg-thumb"></span>
+          </div>
+          <p class="hint" id="styleHint">Flowing colour drawn from each song's artwork.</p>
+          <div class="video-block" id="videoBlock" hidden>
+            <div class="logo-empty" id="videoEmpty">
+              <div class="art-drop logo-drop" id="videoDrop"><svg><use href="#i-video"/></svg><span>Drop a video</span><button class="btn btn-secondary" id="videoBrowse">Browse…</button><span class="hint">MP4, MOV, WebM, GIF… It plays on a loop behind everything; its sound is ignored.</span><span class="hint video-status" id="videoStatus"></span></div>
+            </div>
+            <div class="logo-current video-current" id="videoCurrent" hidden><div class="video-thumb"><img id="videoThumb" alt=""></div><div class="video-info"><span class="logo-name" id="videoName"></span><span class="video-meta" id="videoMeta"></span></div><button class="btn btn-icon btn-sm" id="videoRemove" aria-label="Remove the video" data-tip="Remove"><svg><use href="#i-close"/></svg></button></div>
+            <div class="video-options" id="videoOptions" hidden>
+              <div class="row"><label for="videoBlur">Blur</label><div class="range-wrap"><input type="range" id="videoBlur" data-range="look.videoBlur" min="0" max="1" step="0.05"><span class="val" data-val="look.videoBlur"></span></div></div>
+            </div>
+          </div>
+          <div class="row"><label id="motionLabel">Motion</label>
+            <div class="seg seg-sm" data-seg="look.motion" role="radiogroup" aria-labelledby="motionLabel">
+              <button type="button" data-value="0">Still</button>
+              <button type="button" data-value="0.5">Slow</button>
+              <button type="button" data-value="1">Normal</button>
+              <span class="seg-thumb"></span>
+            </div>
+          </div>
+          <p class="hint" id="motionHint" hidden></p>
+          <div class="row"><label>Per song</label><button class="btn btn-sm btn-secondary" id="perSongBtn"><svg><use href="#i-video"/></svg>Choose a song…</button></div>
+          <p class="hint hint-persong">Any song can have its own background, or show its own video behind it or in place of the artwork. Pick it here, from the film button on its row, or from its ⋯ menu (<b>Song settings…</b>).</p>
+          <div class="row">
+            <label for="dimRange">Darken</label>
+            <div class="range-wrap"><input type="range" id="dimRange" data-range="look.dim" min="0" max="0.6" step="0.05"><span class="val" data-val="look.dim"></span></div>
+          </div>
+          <div class="row">
+            <label for="grainRange">Grain</label>
+            <div class="range-wrap"><input type="range" id="grainRange" data-range="look.grain" min="0" max="1" step="0.05"><span class="val" data-val="look.grain"></span></div>
+          </div>
+        </section>
+        <section class="group">
+          <h3 class="group-title">Artwork</h3>
+          <div class="row"><label id="cornersLabel">Corners</label>
+            <div class="seg seg-sm" data-seg="look.corners" role="radiogroup" aria-labelledby="cornersLabel">
+              <button type="button" data-value="sharp">Sharp</button>
+              <button type="button" data-value="soft">Soft</button>
+              <button type="button" data-value="round">Round</button>
+              <span class="seg-thumb"></span>
+            </div>
+          </div>
+          <div class="row"><label id="sideLabel">Position</label>
+            <div class="seg seg-sm" data-seg="look.side" role="radiogroup" aria-labelledby="sideLabel">
+              <button type="button" data-value="left">Left</button>
+              <button type="button" data-value="right">Right</button>
+              <span class="seg-thumb"></span>
+            </div>
+          </div>
+          <div class="row"><label for="swGlow">Colour glow</label><label class="switch"><input type="checkbox" id="swGlow" data-switch="look.glow"><span class="knob"></span></label></div>
+        </section>
+        <section class="group">
+          <h3 class="group-title">Typeface</h3>
+          <div class="seg seg-wide" data-seg="look.font" role="radiogroup" aria-label="Typeface">
+            <button type="button" data-value="sans" style="font-family: system-ui, -apple-system, sans-serif">Sans</button>
+            <button type="button" data-value="serif" style="font-family: ui-serif, 'New York', Georgia, serif">Serif</button>
+            <button type="button" data-value="mono" style="font-family: ui-monospace, 'SF Mono', Menlo, monospace">Mono</button>
+            <span class="seg-thumb"></span>
+          </div>
+        </section>
+        <section class="group">
+          <h3 class="group-title">Text</h3>
+          <div class="row"><label for="swTitle">Mix title</label><label class="switch"><input type="checkbox" id="swTitle" data-switch="look.showTitle"><span class="knob"></span></label></div>
+          <div class="row"><label for="subtitleInput">Subtitle</label><input class="input input-sm" type="text" id="subtitleInput" placeholder="Optional" spellcheck="false" autocomplete="off" maxlength="80"></div>
+          <div class="row"><label for="swMeta">Track count and length</label><label class="switch"><input type="checkbox" id="swMeta" data-switch="look.showMeta"><span class="knob"></span></label></div>
+          <div class="row"><label for="swNow">Song title and artist</label><label class="switch"><input type="checkbox" id="swNow" data-switch="look.showNowPlaying"><span class="knob"></span></label></div>
+          <div class="row"><label for="swFlow">Scroll long text</label><label class="switch"><input type="checkbox" id="swFlow" data-switch="look.marquee"><span class="knob"></span></label></div>
+          <p class="hint">Titles and artists that don't fit glide from right to left while their song plays.</p>
+          <div class="row"><label for="swEyebrow">“Now playing” label</label><label class="switch"><input type="checkbox" id="swEyebrow" data-switch="look.eyebrow"><span class="knob"></span></label></div>
+          <div class="row"><label for="swNext">Up next</label><label class="switch"><input type="checkbox" id="swNext" data-switch="look.showNext"><span class="knob"></span></label></div>
+          <div class="row"><label for="swClock">Mix clock</label><label class="switch"><input type="checkbox" id="swClock" data-switch="look.showClock"><span class="knob"></span></label></div>
+          <div class="row"><label id="timeModeLabel">Song time</label>
+            <div class="seg seg-sm" data-seg="look.timeMode" role="radiogroup" aria-labelledby="timeModeLabel">
+              <button type="button" data-value="elapsed">Elapsed</button>
+              <button type="button" data-value="remaining">Left</button>
+              <button type="button" data-value="both">Both</button>
+              <span class="seg-thumb"></span>
+            </div>
+          </div>
+          <div class="row"><label id="progressLabel">Progress</label>
+            <div class="seg seg-sm" data-seg="look.progress" role="radiogroup" aria-labelledby="progressLabel">
+              <button type="button" data-value="bar">Bar</button>
+              <button type="button" data-value="wave">Waveform</button>
+              <span class="seg-thumb"></span>
+            </div>
+          </div>
+          <p class="hint">“Up next” names the following track under the song time, quietly, and steps forward near the end of the song. The mix clock counts the whole video in a corner. The waveform is the song's own, filling as it plays.</p>
+        </section>
+        <section class="group">
+          <h3 class="group-title">Track list</h3>
+          <div class="seg seg-wide" data-seg="look.rows" role="radiogroup" aria-label="Row style">
+            <button type="button" data-value="boxes">Boxes</button>
+            <button type="button" data-value="lines">Lines</button>
+            <button type="button" data-value="plain">Plain</button>
+            <span class="seg-thumb"></span>
+          </div>
+          <div class="row"><label id="densityLabel">Density</label>
+            <div class="seg seg-sm" data-seg="look.density" role="radiogroup" aria-labelledby="densityLabel">
+              <button type="button" data-value="comfortable">Comfortable</button>
+              <button type="button" data-value="compact">Compact</button>
+              <span class="seg-thumb"></span>
+            </div>
+          </div>
+          <div class="row"><label id="accentLabel">Colour</label>
+            <div class="seg seg-sm" data-seg="look.accent" role="radiogroup" aria-labelledby="accentLabel">
+              <button type="button" data-value="white">White</button>
+              <button type="button" data-value="album">Album</button>
+              <span class="seg-thumb"></span>
+            </div>
+          </div>
+          <div class="row"><label id="markerLabel">Marker</label>
+            <div class="seg seg-marker" data-seg="look.marker" role="radiogroup" aria-labelledby="markerLabel">
+              <button type="button" data-value="arrow" data-tip="Arrow"><svg class="marker-icon"><use href="#i-marker-arrow"/></svg></button>
+              <button type="button" data-value="triangle" data-tip="Triangle"><svg class="marker-icon"><use href="#i-marker-triangle"/></svg></button>
+              <span class="seg-thumb"></span>
+            </div>
+          </div>
+          <div class="row"><label for="swIndex">Numbers</label><label class="switch"><input type="checkbox" id="swIndex" data-switch="look.showIndex"><span class="knob"></span></label></div>
+          <div class="row"><label for="swThumbs">Thumbnails</label><label class="switch"><input type="checkbox" id="swThumbs" data-switch="look.showThumbs"><span class="knob"></span></label></div>
+          <div class="row"><label for="swDur">Durations</label><label class="switch"><input type="checkbox" id="swDur" data-switch="look.showDurations"><span class="knob"></span></label></div>
+          <div class="row"><label for="swProg">Progress bar</label><label class="switch"><input type="checkbox" id="swProg" data-switch="look.showProgress"><span class="knob"></span></label></div>
+        </section>
+        <section class="group" id="captions">
+          <h3 class="group-title">Captions</h3>
+          <div class="caption-list" id="captionList"></div>
+          <p class="hint" id="captionHint" hidden>Drag a caption in the preview to put it anywhere. It uses the mix's typeface.</p>
+          <button class="btn btn-secondary btn-wide" id="captionAdd"><svg><use href="#i-plus"/></svg>Add a caption</button>
+        </section>
+        <section class="group" id="logo">
+          <h3 class="group-title">Logo</h3>
+          <div class="logo-empty" id="logoEmpty">
+            <div class="art-drop logo-drop" id="logoDrop"><svg><use href="#i-image"/></svg><span>Drop a logo or watermark</span><button class="btn btn-secondary" id="logoBrowse">Browse…</button><span class="hint">PNG with transparency works best.</span></div>
+          </div>
+          <div class="logo-current" id="logoCurrent" hidden><div class="logo-thumb"><img id="logoThumb" alt=""></div><span class="logo-name" id="logoName"></span><button class="btn btn-icon btn-sm" id="logoRemove" aria-label="Remove the logo" data-tip="Remove"><svg><use href="#i-close"/></svg></button></div>
+          <div class="logo-options" id="logoOptions" hidden>
+            <div class="places places-logo" id="logoPlaces" role="radiogroup" aria-label="Where the logo sits"></div>
+            <p class="hint" id="logoHint"></p>
+            <div class="row"><label for="logoSize">Size</label><div class="range-wrap"><input type="range" id="logoSize" data-range="logo.size" min="0.03" max="0.4" step="0.005"><span class="val" data-val="logo.size"></span></div></div>
+            <div class="row"><label for="logoOpacity">Opacity</label><div class="range-wrap"><input type="range" id="logoOpacity" data-range="logo.opacity" min="0.05" max="1" step="0.01"><span class="val" data-val="logo.opacity"></span></div></div>
+          </div>
+        </section>
+        <section class="group" id="vizGroup">
+          <h3 class="group-title">Visualizer</h3>
+          <div class="seg seg-wide" data-seg="viz.style" role="radiogroup" aria-label="Frequency visualizer">
+            <button type="button" data-value="off">Off</button>
+            <button type="button" data-value="bars">Bars</button>
+            <button type="button" data-value="bands">Bands</button>
+            <button type="button" data-value="wave">Wave</button>
+            <span class="seg-thumb"></span>
+          </div>
+          <div class="viz-options" id="vizOptions" hidden>
+            <div class="places places-viz" id="vizPlaces" role="radiogroup" aria-label="Where the visualizer sits"></div>
+            <p class="hint" id="vizHint"></p>
+            <div class="row"><label for="vizSize">Height</label><div class="range-wrap"><input type="range" id="vizSize" data-range="viz.size" min="0.05" max="0.4" step="0.01"><span class="val" data-val="viz.size"></span></div></div>
+            <div class="row" id="vizWidthRow"><label for="vizWidth">Width</label><div class="range-wrap"><input type="range" id="vizWidth" data-range="viz.w" min="0.1" max="1" step="0.01"><span class="val" data-val="viz.w"></span></div></div>
+            <div class="row"><label id="vizColorLabel">Colour</label>
+              <div class="seg seg-sm" data-seg="viz.color" role="radiogroup" aria-labelledby="vizColorLabel">
+                <button type="button" data-value="white">White</button>
+                <button type="button" data-value="album">Album</button>
+                <button type="button" data-value="spectrum">Spectrum</button>
+                <span class="seg-thumb"></span>
+              </div>
+            </div>
+            <div class="row"><label for="vizLevel">Level</label><div class="range-wrap"><input type="range" id="vizLevel" data-range="viz.level" min="0.5" max="2" step="0.05"><span class="val" data-val="viz.level"></span></div></div>
+            <div class="row" id="vizLabelsRow"><label for="swVizLabels">Low · Mid · High labels</label><label class="switch"><input type="checkbox" id="swVizLabels" data-switch="viz.labels"><span class="knob"></span></label></div>
+            <div class="row" id="vizLabelSizeRow"><label id="vizLabelSizeLabel">Label size</label>
+              <div class="seg seg-sm" data-seg="viz.labelSize" role="radiogroup" aria-labelledby="vizLabelSizeLabel">
+                <button type="button" data-value="small">Small</button>
+                <button type="button" data-value="large">Large</button>
+                <span class="seg-thumb"></span>
+              </div>
+            </div>
+            <div class="row" id="vizGuidesRow"><label for="swVizGuides">Region guides</label><label class="switch"><input type="checkbox" id="swVizGuides" data-switch="viz.guides"><span class="knob"></span></label></div>
+            <div class="row" id="vizMirrorRow"><label for="swVizMirror">Mirror</label><label class="switch"><input type="checkbox" id="swVizMirror" data-switch="viz.mirror"><span class="knob"></span></label></div>
+          </div>
+        </section>
+        <section class="group">
+          <h3 class="group-title">Timing</h3>
+          <div class="row"><label for="leadRange">Intro</label><div class="range-wrap"><input type="range" id="leadRange" data-range="timing.lead" min="0" max="5" step="0.5"><span class="val" data-val="timing.lead"></span></div></div>
+          <div class="row"><label for="gapRange">Gap</label><div class="range-wrap"><input type="range" id="gapRange" data-range="timing.gap" min="0" max="5" step="0.5"><span class="val" data-val="timing.gap"></span></div></div>
+          <div class="row"><label for="xfRange">Crossfade</label><div class="range-wrap"><input type="range" id="xfRange" data-range="timing.crossfade" min="0" max="8" step="0.5"><span class="val" data-val="timing.crossfade"></span></div></div>
+          <p class="hint" id="xfHint" hidden></p>
+          <div class="row"><label for="tailRange">Outro</label><div class="range-wrap"><input type="range" id="tailRange" data-range="timing.tail" min="0" max="5" step="0.5"><span class="val" data-val="timing.tail"></span></div></div>
+          <p class="hint">Silence before, between and after the songs. The picture fades in and out with it.</p>
+        </section>
+        <div class="pane-foot"><button class="btn btn-sm pane-reset" data-pane="look"><svg><use href="#i-reset"/></svg>Reset Look to defaults</button></div>
+      </div>
+
+      <div class="tab-pane" data-pane="dancers" hidden>
+        <section class="group">
+          <h3 class="group-title">Dancers</h3>
+          <div class="dancer-empty" id="dancerEmpty">
+            <div class="empty-art"><svg><use href="#i-dancer"/></svg></div>
+            <p class="empty-title">No dancers yet</p>
+            <p class="empty-sub">Drop a GIF, an animated PNG, a short video or a set of images of someone dancing. They join the video on the lively tracks, standing wherever you say.</p>
+            <button class="btn btn-secondary" id="dancerAddBtn"><svg><use href="#i-plus"/></svg>Add a dancer</button>
+          </div>
+          <div class="dancer-list" id="dancerList"></div>
+          <div class="dancer-add-row" id="dancerAddRow" hidden><button class="btn btn-secondary btn-wide" id="dancerAddBtn2"><svg><use href="#i-plus"/></svg>Add another dancer</button></div>
+        </section>
+        <section class="group" id="danceRules" hidden>
+          <h3 class="group-title">When they appear</h3>
+          <div class="seg seg-wide" data-seg="dance.mode" role="radiogroup" aria-label="When the dancers appear">
+            <button type="button" data-value="auto">Auto</button>
+            <button type="button" data-value="always">Every track</button>
+            <span class="seg-thumb"></span>
+          </div>
+          <div class="row" id="danceSensRow"><label for="danceSens">Sensitivity</label><div class="range-wrap"><input type="range" id="danceSens" data-range="dance.sensitivity" min="0" max="1" step="0.05"><span class="val val-wide" data-val="dance.sensitivity"></span></div></div>
+          <p class="hint" id="danceHint"></p>
+          <div class="dance-summary"><span id="danceSummary"></span><button class="btn btn-sm" id="danceReview">Review tracks…</button></div>
+        </section>
+        <div class="pane-foot"><button class="btn btn-sm pane-reset" data-pane="dancers"><svg><use href="#i-reset"/></svg>Reset Dancers to defaults</button></div>
+      </div>
+
+      <div class="tab-pane" data-pane="output" hidden>
+        <section class="group">
+          <h3 class="group-title">Resolution</h3>
+          <div class="select">
+            <select id="presetSelect" data-select="output.preset" aria-label="Resolution">
+              <option value="720p">720p · 1280 × 720</option>
+              <option value="1080p">1080p · 1920 × 1080</option>
+              <option value="1440p">1440p · 2560 × 1440</option>
+              <option value="2160p">4K · 3840 × 2160</option>
+              <option value="custom">Custom…</option>
+            </select>
+            <svg><use href="#i-chevron"/></svg>
+          </div>
+          <div class="size-pair" id="sizePair" hidden>
+            <input class="input" type="number" id="widthInput" min="160" max="8192" step="2" aria-label="Width">
+            <span class="x">×</span>
+            <input class="input" type="number" id="heightInput" min="90" max="8192" step="2" aria-label="Height">
+          </div>
+        </section>
+        <section class="group">
+          <h3 class="group-title">Frame rate</h3>
+          <div class="seg seg-wide" data-seg="output.fps" role="radiogroup" aria-label="Frame rate">
+            <button type="button" data-value="24">24</button>
+            <button type="button" data-value="25">25</button>
+            <button type="button" data-value="30">30</button>
+            <button type="button" data-value="60">60</button>
+            <span class="seg-thumb"></span>
+          </div>
+        </section>
+        <section class="group">
+          <h3 class="group-title">Video</h3>
+          <div class="seg seg-wide" data-seg="output.codec" role="radiogroup" aria-label="Video codec">
+            <button type="button" data-value="h264">H.264</button>
+            <button type="button" data-value="hevc" id="hevcBtn">HEVC</button>
+            <span class="seg-thumb"></span>
+          </div>
+          <div class="row row-gap"><label>Quality</label></div>
+          <div class="seg seg-wide" data-seg="output.quality" role="radiogroup" aria-label="Quality">
+            <button type="button" data-value="standard">Standard</button>
+            <button type="button" data-value="high">High</button>
+            <button type="button" data-value="max">Maximum</button>
+            <span class="seg-thumb"></span>
+          </div>
+          <p class="hint" id="bitrateHint"></p>
+        </section>
+        <section class="group">
+          <h3 class="group-title">Audio</h3>
+          <div class="seg seg-wide" data-seg="output.audio" role="radiogroup" aria-label="Audio codec">
+            <button type="button" data-value="aac">AAC 320 kb/s</button>
+            <button type="button" data-value="alac">Lossless</button>
+            <span class="seg-thumb"></span>
+          </div>
+          <p class="hint" id="audioHint">Plays everywhere. Songs are joined without re-tuning.</p>
+          <div class="row row-gap"><label>Bass</label></div>
+          <div class="seg seg-wide" data-seg="audio.bass" role="radiogroup" aria-label="Bass">
+            <button type="button" data-value="off">Off</button>
+            <button type="button" data-value="boost">Boost</button>
+            <button type="button" data-value="smart">Smart</button>
+            <button type="button" data-value="smart2">Smart 2</button>
+            <span class="seg-thumb"></span>
+          </div>
+          <div class="row" id="bassGainRow"><label for="bassRange">Strength</label><div class="range-wrap"><input type="range" id="bassRange" data-range="audio.gain" min="1" max="15" step="1"><span class="val" data-val="audio.gain"></span></div></div>
+          <p class="hint" id="bassHint"></p>
+        </section>
+        <section class="group">
+          <h3 class="group-title">File</h3>
+          <div class="file-name"><input class="input" type="text" id="fileNameInput" data-text="output.fileName" placeholder="Untitled mix" spellcheck="false" autocomplete="off" maxlength="120"><span class="ext">.mp4</span></div>
+          <p class="hint">Saved to the Liner › Exports folder.</p>
+          <dl class="facts">
+            <div><dt>Estimated size</dt><dd id="sizeEstimate">—</dd></div>
+            <div><dt>Encoder</dt><dd id="encoderFact">Checking…</dd></div>
+          </dl>
+        </section>
+        <div class="pane-foot"><button class="btn btn-sm pane-reset" data-pane="output"><svg><use href="#i-reset"/></svg>Reset Output to defaults</button></div>
+      </div>
+    </div>
+  </aside>
+</main>
+
+<div class="sheet-backdrop" id="exportSheet" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <div class="sheet-head">
+      <h3 id="sheetTitle">Exporting</h3>
+      <span class="sheet-sub" id="sheetSub"></span>
+    </div>
+    <div class="sheet-preview" id="sheetPreview"><canvas id="sheetCanvas"></canvas></div>
+    <div class="sheet-progress" id="sheetProgress">
+      <div class="progress"><div class="progress-bar" id="sheetBar"></div></div>
+      <div class="sheet-stats"><span class="pct" id="sheetPct">0%</span><span class="detail" id="sheetDetail">Preparing…</span></div>
+      <ol class="phases" id="phases">
+        <li data-phase="render"><span class="phase-dot"></span>Render frames</li>
+        <li data-phase="finish"><span class="phase-dot"></span>Encode audio and write the file</li>
+      </ol>
+    </div>
+    <div class="sheet-result" id="sheetResult" hidden>
+      <div class="file-card">
+        <div class="file-icon"><svg><use href="#i-check"/></svg></div>
+        <div class="file-info"><b id="resultName"></b><span id="resultMeta"></span></div>
+      </div>
+    </div>
+    <div class="sheet-error" id="sheetError" hidden><svg><use href="#i-warning"/></svg><span id="sheetErrorText"></span></div>
+    <div class="sheet-actions">
+      <button class="btn btn-secondary" id="sheetCancel">Cancel</button>
+      <button class="btn btn-secondary" id="sheetOpen" hidden><svg><use href="#i-open"/></svg>Open</button>
+      <button class="btn btn-secondary" id="sheetReveal" hidden><svg><use href="#i-folder"/></svg>Reveal in Finder</button>
+      <button class="btn btn-primary" id="sheetDone" hidden>Done</button>
+    </div>
+  </div>
+</div>
+
+<div class="sheet-backdrop" id="trimSheet" hidden>
+  <div class="sheet sheet-trim" role="dialog" aria-modal="true" aria-labelledby="trimTitle">
+    <div class="sheet-head">
+      <h3 id="trimTitle">Trim</h3>
+      <span class="sheet-sub" id="trimSong"></span>
+    </div>
+    <div class="trim-wave" id="trimWave"><canvas id="trimCanvas"></canvas><div class="trim-loading" id="trimLoading">Reading the waveform…</div></div>
+    <div class="trim-ruler" id="trimRuler"></div>
+    <div class="trim-controls">
+      <button class="play play-sm" id="trimPlay" aria-label="Play the kept part" data-tip="Play the kept part (Space)">
+        <svg class="ic-play"><use href="#i-play"/></svg>
+        <svg class="ic-pause"><use href="#i-pause"/></svg>
+      </button>
+      <span class="time trim-time" id="trimTime">0:00.0</span>
+      <span class="trim-field"><label for="trimStartInput">Start</label><input class="input" id="trimStartInput" spellcheck="false" autocomplete="off"><button class="btn btn-icon btn-sm" id="trimSetStart" aria-label="Set the start at the playhead" data-tip="Start here (I)"><svg><use href="#i-marker-arrow"/></svg></button></span>
+      <span class="trim-field"><label for="trimEndInput">End</label><input class="input" id="trimEndInput" spellcheck="false" autocomplete="off"><button class="btn btn-icon btn-sm" id="trimSetEnd" aria-label="Set the end at the playhead" data-tip="End here (O)"><svg><use href="#i-marker-arrow"/></svg></button></span>
+      <label class="trim-fade"><span>Fade the cuts</span><span class="switch"><input type="checkbox" id="trimFade"><span class="knob"></span></span></label>
+    </div>
+    <div class="trim-tools"><button class="btn btn-sm btn-secondary" id="trimSilenceBtn">Trim silence</button><button class="btn btn-sm btn-secondary" id="trimBeatsBtn">Snap to beats</button><span class="hint">Silence: the cuts move to where the sound starts and ends. Beats: each cut moves to the nearest detected beat.</span></div>
+    <div class="trim-summary"><span id="trimKeep"></span><span class="hint">Drag the handles, or press I and O at the playhead. Space auditions the kept part.</span></div>
+    <div class="sheet-actions">
+      <button class="btn btn-secondary" id="trimReset">Reset</button>
+      <span class="sheet-spacer"></span>
+      <button class="btn btn-secondary" id="trimCancel">Cancel</button>
+      <button class="btn btn-primary" id="trimApply">Apply</button>
+    </div>
+  </div>
+</div>
+<div class="sheet-backdrop" id="artSheet" hidden>
+  <div class="sheet sheet-art" role="dialog" aria-modal="true" aria-labelledby="artTitle">
+    <div class="art-head">
+      <div class="art-current" id="artCurrent"></div>
+      <div class="art-head-text">
+        <h3 id="artTitle">Cover art</h3>
+        <span class="art-song" id="artSong"></span>
+        <span class="art-source" id="artSource"></span>
+      </div>
+    </div>
+    <div class="seg seg-wide" id="artModes" role="radiogroup" aria-label="Cover art source">
+      <button type="button" data-value="find">Find automatically</button>
+      <button type="button" data-value="choose">Choose an image</button>
+      <button type="button" data-value="none">No cover</button>
+      <span class="seg-thumb"></span>
+    </div>
+    <div class="art-pane" data-pane="find">
+      <div class="art-search">
+        <input class="input" id="artQuery" type="text" placeholder="Artist and song" spellcheck="false" autocomplete="off" aria-label="Search for cover art">
+        <button class="btn" id="artSearchBtn"><svg><use href="#i-search"/></svg>Search</button>
+      </div>
+      <div class="art-grid" id="artGrid"></div>
+    </div>
+    <div class="art-pane" data-pane="choose" hidden>
+      <div class="art-drop" id="artDrop">
+        <svg><use href="#i-image"/></svg>
+        <span>Drop an image here</span>
+        <button class="btn btn-secondary" id="artBrowse">Browse…</button>
+        <span class="hint">PNG, JPEG, WebP or HEIC. Square images work best; others are cropped to the centre.</span>
+      </div>
+    </div>
+    <div class="art-pane" data-pane="none" hidden>
+      <div class="art-none">
+        <div class="art-none-tile" id="artNoneTile"></div>
+        <span>Without artwork the song shows a generated tile with its initial, coloured from the title.</span>
+        <button class="btn btn-secondary" id="artUseNone">Use no cover</button>
+      </div>
+    </div>
+    <div class="sheet-actions">
+      <span class="art-summary" id="artSummary"></span>
+      <button class="btn btn-primary" id="artDone">Done</button>
+    </div>
+  </div>
+</div>
+<div class="sheet-backdrop" id="linkSheet" hidden>
+  <div class="sheet sheet-links" role="dialog" aria-modal="true" aria-labelledby="linkTitle">
+    <div class="sheet-head">
+      <h3 id="linkTitle">Add from a link</h3>
+      <span class="sheet-sub">YouTube and SoundCloud, playlists and sets too</span>
+    </div>
+    <textarea id="linkText" class="link-text" rows="2" placeholder="Paste one or more links, one per line" spellcheck="false" autocomplete="off"></textarea>
+    <div class="link-bar-row">
+      <p class="hint" id="linkHint">Best available audio, saved as WAV in Liner › Downloads. Add what you like to the tracks afterwards.</p>
+      <button class="btn btn-primary" id="linkFetch">Fetch</button>
+    </div>
+    <div class="link-list" id="linkList"></div>
+    <div class="sheet-actions">
+      <span class="link-summary" id="linkSummary"></span>
+      <button class="btn btn-secondary" id="linkAddAll" hidden>Add all ready</button>
+      <button class="btn btn-secondary" id="linkClose">Close</button>
+    </div>
+  </div>
+</div>
+<div class="sheet-backdrop" id="songSheet" hidden>
+  <div class="sheet sheet-song" role="dialog" aria-modal="true" aria-labelledby="songSheetTitle">
+    <div class="art-head">
+      <div class="art-current" id="songSheetThumb"></div>
+      <div class="art-head-text">
+        <h3 id="songSheetTitle">Song settings</h3>
+        <span class="art-song" id="songSheetSong"></span>
+        <span class="art-source" id="songSheetSub"></span>
+      </div>
+    </div>
+    <section class="song-section">
+      <h4>Sound</h4>
+      <div class="row"><label for="songVolume">Volume</label><div class="range-wrap"><input type="range" id="songVolume" min="-12" max="6" step="0.5" data-tip="Double-click for 0 dB"><span class="val" id="songVolumeVal"></span></div></div>
+      <p class="hint">Louder or quieter than the file, in the preview and in the export.</p>
+    </section>
+    <section class="song-section">
+      <h4>Video</h4>
+      <div class="song-options" role="radiogroup" aria-label="Which video">
+        <div class="song-option" id="songOptOwn" role="radio" tabindex="0" data-value="own" aria-checked="false">
+          <span class="song-option-head"><svg><use href="#i-video"/></svg><b>This song’s video</b><span class="song-option-check"><svg><use href="#i-check"/></svg></span></span>
+          <span class="song-option-sub" id="songOwnStatus"></span>
+          <span class="song-option-actions"><button type="button" class="btn btn-sm btn-secondary" id="songOwnPrepare" hidden>Try again</button></span>
+        </div>
+        <div class="song-option" id="songOptOther" role="radio" tabindex="0" data-value="other" aria-checked="false">
+          <span class="song-option-head"><svg><use href="#i-folder"/></svg><b>Another video</b><span class="song-option-check"><svg><use href="#i-check"/></svg></span></span>
+          <span class="song-option-sub" id="songOtherSub">A video of your choice. It starts with the song and loops; its sound is ignored.</span>
+        </div>
+      </div>
+      <div class="song-other" id="songOther" hidden>
+        <div class="logo-empty" id="songVideoEmpty">
+          <div class="art-drop logo-drop" id="songVideoDrop"><svg><use href="#i-video"/></svg><span>Drop a video for this song</span><button class="btn btn-secondary" id="songVideoBrowse">Browse…</button><span class="hint video-status" id="songVideoStatus"></span></div>
+        </div>
+        <div class="logo-current video-current" id="songVideoCurrent" hidden><div class="video-thumb"><img id="songVideoThumb" alt=""></div><div class="video-info"><span class="logo-name" id="songVideoName"></span><span class="video-meta" id="songVideoMeta"></span></div><button class="btn btn-icon btn-sm" id="songVideoRemove" aria-label="Remove this video" data-tip="Remove"><svg><use href="#i-close"/></svg></button></div>
+      </div>
+      <div class="seg seg-wide" id="songVideoUse" role="radiogroup" aria-label="Where the song's video shows">
+        <button type="button" data-value="off">Audio only</button>
+        <button type="button" data-value="background">Background</button>
+        <button type="button" data-value="art">Artwork</button>
+        <button type="button" data-value="both">Both</button>
+        <span class="seg-thumb"></span>
+      </div>
+      <p class="hint" id="songVideoHint"></p>
+      <div class="row" id="songBlurRow" hidden><label for="songVideoBlur">Blur</label><div class="range-wrap"><input type="range" id="songVideoBlur" min="0" max="1" step="0.05" data-tip="Double-click to follow the mix’s blur"><span class="val" id="songVideoBlurVal"></span></div></div>
+    </section>
+    <section class="song-section">
+      <h4>Background for this song</h4>
+      <div class="seg seg-wide" id="songBg" role="radiogroup" aria-label="Background for this song">
+        <button type="button" data-value="mix">Same as the mix</button>
+        <button type="button" data-value="aurora">Aurora</button>
+        <button type="button" data-value="cover">Cover</button>
+        <button type="button" data-value="ink">Ink</button>
+        <span class="seg-thumb"></span>
+      </div>
+      <p class="hint" id="songBgHint"></p>
+    </section>
+    <div class="sheet-actions"><button class="btn btn-primary" id="songSheetDone">Done</button></div>
+  </div>
+</div>
+<div class="sheet-backdrop" id="saveMixSheet" hidden>
+  <div class="sheet sheet-mix" role="dialog" aria-modal="true" aria-labelledby="saveMixTitle">
+    <h3 id="saveMixTitle">Save mix</h3>
+    <p class="hint">Mixes save themselves as you work. This writes a copy of the mix together with its songs, covers, dancers, logo and videos, as a safeguard or to take it elsewhere.</p>
+    <div class="mix-choices">
+      <button type="button" class="mix-choice" id="saveMixHere"><b>In Liner’s Mixes folder</b><span id="saveMixHerePath"></span></button>
+      <button type="button" class="mix-choice" id="saveMixElse"><b>Somewhere else…</b><span>Choose a folder of your own</span></button>
+    </div>
+    <p class="hint mix-status" id="saveMixStatus"></p>
+    <div class="sheet-actions"><span class="sheet-spacer"></span><button class="btn btn-secondary" id="saveMixCancel">Cancel</button></div>
+  </div>
+</div>
+<div class="sheet-backdrop" id="loadMixSheet" hidden>
+  <div class="sheet sheet-mix" role="dialog" aria-modal="true" aria-labelledby="loadMixTitle">
+    <h3 id="loadMixTitle">Load mix</h3>
+    <p class="hint">Saved copies in Liner’s Mixes folder. Loading one makes a new mix from it; any song or video that is no longer in the cache comes back from the copy.</p>
+    <div class="mix-list" id="loadMixList"></div>
+    <div class="mix-choices"><button type="button" class="mix-choice" id="loadMixElse"><b>Somewhere else…</b><span>Choose a saved mix folder of your own</span></button></div>
+    <p class="hint mix-status" id="loadMixStatus"></p>
+    <div class="sheet-actions"><span class="sheet-spacer"></span><button class="btn btn-secondary" id="loadMixCancel">Cancel</button></div>
+  </div>
+</div>
+<div class="sheet-backdrop" id="helpSheet" hidden>
+  <div class="sheet sheet-help" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <div class="sheet-head"><h3 id="helpTitle">Keyboard shortcuts</h3><span class="sheet-sub">Anywhere in the window, unless you're typing</span></div>
+    <div class="keys">
+      <span class="keys-head">Playback</span>
+      <span class="k"><kbd>Space</kbd></span><span>Play or pause</span>
+      <span class="k"><kbd>←</kbd> <kbd>→</kbd></span><span>Seek 5 s · with <kbd>⇧</kbd> 30 s</span>
+      <span class="k"><kbd>Home</kbd></span><span>Back to the start</span>
+      <span class="k"><kbd>,</kbd> <kbd>.</kbd></span><span>One frame back or forward · with <kbd>⇧</kbd> ten frames (the time shows the frame while paused)</span>
+      <span class="k"><kbd>M</kbd></span><span>Mute the preview</span>
+      <span class="keys-head">Tracks</span>
+      <span class="k"><kbd>↑</kbd> <kbd>↓</kbd></span><span>Select the previous or next song</span>
+      <span class="k"><kbd>⌥</kbd> <kbd>↑</kbd> <kbd>↓</kbd></span><span>Move the selected song</span>
+      <span class="k"><kbd>Enter</kbd></span><span>Play the selected song</span>
+      <span class="k"><kbd>⌫</kbd></span><span>Remove the selected song (with undo)</span>
+      <span class="k"><kbd>⌘</kbd> <kbd>V</kbd></span><span>Paste a YouTube or SoundCloud link</span>
+      <span class="k"><kbd>I</kbd> <kbd>O</kbd></span><span>In the trimmer: set the start or end at the playhead</span>
+      <span class="keys-head">Preview</span>
+      <span class="k"><kbd>F</kbd></span><span>Expand or restore the preview</span>
+      <span class="k">Double-click</span><span>On the preview: expand or restore it</span>
+      <span class="k">Drag</span><span>The visualizer, dancers, captions and the logo, anywhere; they snap to the centre and the margins</span>
+      <span class="k">Click</span><span>Select one of them, then <kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd> <kbd>→</kbd> nudge it a pixel, <kbd>⇧</kbd> ten</span>
+      <span class="keys-head">Editor</span>
+      <span class="k">Double-click</span><span>On a slider: back to its default (<kbd>⌥</kbd> click does the same); on a panel edge: default width</span>
+      <span class="k">Click a value</span><span>Type an exact number for any slider</span>
+      <span class="k"><kbd>⌘</kbd> <kbd>Z</kbd></span><span>Undo the last change · with <kbd>⇧</kbd> redo it (the arrows in the top bar do the same)</span>
+      <span class="k"><kbd>⌘</kbd> <kbd>E</kbd></span><span>Export</span>
+      <span class="k"><kbd>Esc</kbd></span><span>Close a sheet, let go of a selection, or leave the expanded preview</span>
+      <span class="k"><kbd>?</kbd></span><span>This list</span>
+    </div>
+    <div class="sheet-actions"><button class="btn btn-primary" id="helpClose">Done</button></div>
+  </div>
+</div>
+<div class="sheet-backdrop" id="dancerSheet" hidden>
+  <div class="sheet sheet-dancer" role="dialog" aria-modal="true" aria-labelledby="dancerTitle">
+    <div class="sheet-head"><h3 id="dancerTitle">Add a dancer</h3><span class="sheet-sub">A GIF, an animated PNG, a short video, or several images in order</span></div>
+    <div class="art-drop dancer-drop" id="dancerDrop">
+      <svg><use href="#i-dancer"/></svg>
+      <span>Drop a GIF or images here</span>
+      <button class="btn btn-secondary" id="dancerBrowse">Browse…</button>
+      <span class="hint">Pixel art stays crisp, and a plain background is knocked out for you. Up to 12 seconds of a video or GIF.</span>
+    </div>
+    <div class="dancer-progress" id="dancerProgress" hidden><div class="progress"><div class="progress-bar" id="dancerBar"></div></div><span id="dancerProgressText">Uploading…</span></div>
+    <div class="sprite-lib" id="spriteLib" hidden><h4>Added before</h4><div class="sprite-grid" id="spriteGrid"></div></div>
+    <div class="sheet-actions"><button class="btn btn-secondary" id="dancerClose">Close</button></div>
+  </div>
+</div>
+<div class="sheet-backdrop" id="danceSheet" hidden>
+  <div class="sheet sheet-dance" role="dialog" aria-modal="true" aria-labelledby="danceTitle">
+    <div class="sheet-head"><h3 id="danceTitle">Where the dancers appear</h3><span class="sheet-sub" id="danceCount"></span></div>
+    <div class="dance-list" id="danceList"></div>
+    <div class="sheet-actions"><span class="link-summary">Auto follows each track's liveliness. On and Off override it for that track.</span><button class="btn btn-secondary" id="danceAllAuto" hidden>All back to Auto</button><button class="btn btn-primary" id="danceDone">Done</button></div>
+  </div>
+</div>
+<div class="menu" id="menu" hidden role="menu"></div>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<div class="tooltip" id="tooltip" role="tooltip"></div>
+<script type="module" src="app.js"></script>
+</body>
+</html>

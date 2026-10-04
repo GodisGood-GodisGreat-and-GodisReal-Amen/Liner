@@ -1,0 +1,19 @@
+# Liner working data (created by the server; never commit)
+.cache/
+Exports/
+Downloads/
+Mixes/
+
+# OS and editor leftovers
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# Node (Liner has no dependencies, but a stray install should stay local)
+node_modules/
+npm-debug.log*
+
+# Old sample renders kept locally
+Samples/
