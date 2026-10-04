@@ -61,4 +61,4 @@ Liner listens on `127.0.0.1` only and refuses requests from other origins. It ta
 
 ## License
 
-Apache License 2.0. See [LICENSE](LICENSE).
+Public domain. Liner is released under [The Unlicense](LICENSE): copy it, change it, sell it, build on it, no credit needed.

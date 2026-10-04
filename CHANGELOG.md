@@ -2,7 +2,7 @@
 
 ## 1.0.0 — 2026-10-04
 
-First public release.
+First public release, in the public domain (The Unlicense).
 
 - Songs from files (audio or the sound of a video), from YouTube and SoundCloud links through yt-dlp, with tags, embedded covers and a cover-art finder (Apple Music, Deezer, Cover Art Archive).
 - Sample-exact trims with waveform, fades, trim-to-silence and snap-to-beats; per-song volume; equal-power crossfades; sorting by title, artist, length, tempo or energy.

@@ -51,3 +51,5 @@ npm start
 ## Pull requests
 
 Keep them focused, describe what changed in the user's terms, and add a line to `CHANGELOG.md`. Screenshots or a short clip help for anything visual.
+
+Liner is public domain under [The Unlicense](LICENSE). By contributing, you dedicate your contribution to the public domain on the same terms.
