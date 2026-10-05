@@ -32,7 +32,7 @@ const MIXES = path.join(ROOT, 'Mixes'); // saved copies of mixes, with their son
 const EXPORTS = path.join(ROOT, 'Exports');
 const DOWNLOADS = path.join(ROOT, 'Downloads');
 const PORT = Number(process.env.PORT) || 8865;
-const APP_VERSION = '1.1.0'; // bumped with every release; public/app.js carries the same string and the page compares the two
+const APP_VERSION = '1.1.1'; // bumped with every release; public/app.js carries the same string and the page compares the two
 const FFMPEG = process.env.FFMPEG || 'ffmpeg';
 const FFPROBE = process.env.FFPROBE || 'ffprobe';
 const SAMPLE_RATE = 48000;
@@ -473,6 +473,23 @@ async function loadMix(body) {
   for (const o of media.ownVideos || []) { const m = songs.get(o.song); const b = getBackground(o.video); if (m && b && b.ready && m.ownVideo !== o.video) { m.ownVideo = o.video; m.ownVideoStatus = 'ready'; m.ownVideoError = null; await saveMeta(m).catch(() => {}); } }
   log(`mix loaded: ${dir}${warnings.length ? ` (${warnings.length} warning(s))` : ''}`);
   return { title: doc.title || doc.state.title || '', state: doc.state, warnings, savedAt: doc.savedAt || 0 };
+}
+
+// Candidates the art finder downloaded are kept for a while so a search comes back instantly, then let go: the
+// chosen one has long been copied into its song's folder.
+async function pruneArtCache(maxAgeDays = 14, maxBytes = 400e6) {
+  const names = await fsp.readdir(ART_DIR).catch(() => []);
+  if (!names.length) return;
+  const files = [];
+  for (const n of names) { try { const st = await fsp.stat(path.join(ART_DIR, n)); files.push({ n, size: st.size, mtime: st.mtimeMs }); } catch { /* gone */ } }
+  files.sort((a, b) => b.mtime - a.mtime);
+  const cutoff = Date.now() - maxAgeDays * 86400e3;
+  let kept = 0, removed = 0, freed = 0;
+  for (const f of files) {
+    if (f.mtime >= cutoff && kept + f.size <= maxBytes) { kept += f.size; continue; }
+    await fsp.rm(path.join(ART_DIR, f.n), { force: true }).catch(() => {}); removed++; freed += f.size;
+  }
+  if (removed) log(`art cache: let go of ${removed} old candidate file(s), ${fmtBytes(freed)}`);
 }
 
 // ---------------------------------------------------------------- cover art finder (Apple Music, Deezer, MusicBrainz + Cover Art Archive; no API keys)
@@ -1069,9 +1086,10 @@ async function finishRender(r) {
         const ok = bytesRead >= 4 && head[0] === 0 && head[1] === 0 && (head[2] === 1 || (head[2] === 0 && head[3] === 1));
         if (!ok) throw new Error(bytesRead === 0 ? 'The browser sent no video data.' : 'The browser\u2019s encoder produced a stream without start codes, which Liner could not read. Reload the page and try again, or switch to H.264.');
       }
-      // the parts were encoded side by side; back to back they are one stream (each part begins with a keyframe and its parameter sets)
+      // the parts were encoded side by side; back to back they are one stream (each part begins with a keyframe and its
+      // parameter sets), so ffmpeg reads them in a row through its concat protocol instead of a copy being written first
       if (parts.length === 1) await fsp.rename(partPath(r, parts[0]), r.videoPath);
-      else { const out = fs.createWriteStream(r.videoPath); for (const i of parts) await pipeline(fs.createReadStream(partPath(r, i)), out, { end: false }); await new Promise((resolve, reject) => out.end((e) => (e ? reject(e) : resolve()))); }
+      else r.videoInput = 'concat:' + parts.map((i) => path.basename(partPath(r, i))).join('|');
     }
     r.status = { phase: 'audio', progress: 0 };
     const out = await uniqueExportPath(r.fileName);
@@ -1174,7 +1192,7 @@ function mux(r, out, audioFile = null) {
     const between = r.crossfade > 0 ? -(r.overlaps || []).reduce((a, b) => a + b, 0) : Math.round(r.gap * SAMPLE_RATE) * (r.songs.length - 1);
     const totalFrames = r.parts.reduce((a, q) => a + (q.endFrame - q.startFrame), 0) + Math.round((r.lead + r.tail) * SAMPLE_RATE) + between;
     const totalSec = totalFrames / SAMPLE_RATE;
-    const videoIn = r.mode === 'raw' ? ['-i', r.videoPath] : ['-framerate', String(r.fps), '-f', r.codec, '-i', r.videoPath];
+    const videoIn = r.mode === 'raw' ? ['-i', r.videoPath] : ['-framerate', String(r.fps), '-f', r.codec, '-i', r.videoInput || r.videoPath];
     const audioArgs = audioFile ? ['-c:a', 'copy'] : audioCodecArgs(r);
     const colour = ['-colorspace', 'bt709', '-color_primaries', 'bt709', '-color_trc', 'bt709', '-color_range', 'tv'];
     // The browser's elementary stream carries no timestamps: stamp every frame at exactly 1/fps (90 kHz track clock)
@@ -1188,7 +1206,7 @@ function mux(r, out, audioFile = null) {
       '-video_track_timescale', String(TB),
       '-tag:v', r.codec === 'hevc' ? 'hvc1' : 'avc1', '-movflags', '+faststart',
       '-metadata', `title=${r.title || r.fileName}`, '-metadata', 'encoder=Liner', out];
-    const proc = spawn(FFMPEG, args, { stdio: [audioFile ? 'ignore' : 'pipe', 'pipe', 'pipe'] });
+    const proc = spawn(FFMPEG, args, { stdio: [audioFile ? 'ignore' : 'pipe', 'pipe', 'pipe'], cwd: r.dir }); // the concat input names its parts relative to the render folder
     r.proc = proc;
     let err = '';
     proc.stderr.on('data', (d) => { err += d; });
@@ -1500,7 +1518,14 @@ function supervise() {
     wantRestart = true;
     if (child) child.kill('SIGTERM'); else start();
   };
-  for (const f of SELF) fs.watchFile(f, { interval: 1000 }, (cur, prev) => { if (cur.mtimeMs !== prev.mtimeMs) { clearTimeout(timer); timer = setTimeout(restartWhenIdle, 800); } });
+  // the folder is watched (one event-driven watcher, no polling); a change to one of the modules, judged by its
+  // modification time so that unrelated files in the folder never cause a restart, schedules the restart
+  const mtimes = new Map(SELF.map((f) => { try { return [f, fs.statSync(f).mtimeMs]; } catch { return [f, 0]; } }));
+  const changed = () => { let any = false; for (const f of SELF) { let m = 0; try { m = fs.statSync(f).mtimeMs; } catch { /* mid-save */ } if (m && m !== mtimes.get(f)) { mtimes.set(f, m); any = true; } } return any; };
+  let probe = null;
+  const onEvent = () => { clearTimeout(probe); probe = setTimeout(() => { if (changed()) { clearTimeout(timer); timer = setTimeout(restartWhenIdle, 600); } }, 200); };
+  try { fs.watch(ROOT, { persistent: true }, onEvent); }
+  catch { for (const f of SELF) fs.watchFile(f, { interval: 1000 }, onEvent); } // a file system without change events
   const stop = () => { if (stopping) return; stopping = true; if (child) child.kill('SIGTERM'); setTimeout(() => process.exit(0), 300); };
   process.on('SIGINT', stop); process.on('SIGTERM', stop); process.on('SIGHUP', stop);
   start();
@@ -1512,6 +1537,7 @@ else {
   await Promise.all([fsp.mkdir(SONGS, { recursive: true }), fsp.mkdir(EXPORTS, { recursive: true }), fsp.mkdir(DOWNLOADS, { recursive: true })]);
   await fsp.rm(RENDERS, { recursive: true, force: true }).catch(() => {});
   await fsp.mkdir(RENDERS, { recursive: true });
+  pruneArtCache().catch(() => {});
   await detectCapabilities();
   await loadSongs();
   await loadJobs();

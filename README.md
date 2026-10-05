@@ -17,7 +17,7 @@ Everything runs on your own computer: a zero-dependency Node server plus a page 
 - **A frequency visualizer** (bars, three bands, or a wave) computed on the server from the decoded audio, so the preview and the export show exactly the same picture.
 - **Dancers.** Drop a GIF, an animated PNG/WebP, a short video or a set of stills; Liner knocks out the background, keeps pixel art crisp and makes the sprite step in time with the detected beats. An *Auto* mode puts dancers only on the lively tracks.
 - **Captions and a logo**, placed anywhere with snapping guides; a "Now playing" label, an "Up next" line, a mix clock, a waveform progress bar.
-- **Any output.** 720p to 8K, 24/25/30/60 fps, H.264 or HEVC, AAC 320 kb/s or Apple Lossless, with a bass booster that will not clip. 1080p30 renders at roughly 300 frames per second on an Apple-silicon Mac.
+- **Any output.** 720p to 8K, 24/25/30/60 fps, H.264 or HEVC, AAC 320 kb/s or Apple Lossless, with a bass booster that will not clip. 1080p30 renders at roughly 450 frames per second on an Apple-silicon Mac, so an 8-minute mix exports in about 36 seconds.
 - **The preview is the export**, frame for frame. Mixes save themselves as you work, with full undo and redo.
 
 | Aurora background with bars | Cover background | Ink background with a wave |
@@ -48,7 +48,7 @@ There is nothing to install with npm: Liner has no dependencies. The [startup gu
 
 ## How it works, in one paragraph
 
-The server (`server.mjs`) ingests each song once: `ffprobe` reads the tags and the attached picture, then one `ffmpeg` pass decodes it to 48 kHz 24-bit PCM (for a sample-exact join later) and a small AAC preview for the browser. The page renders every frame itself (`public/renderer.js`): a WebGL shader draws the background, Canvas 2D draws the artwork, type, list, visualizer and dancers. Every frame is a pure function of the time, so the preview and the export are identical. On export the page encodes through WebCodecs (two hardware encoders working on two halves of the video at once) and streams the bitstream to the server, which stamps constant-frame-rate timestamps, joins the songs' PCM with the chosen gaps or crossfades, encodes the audio and writes an MP4 with BT.709 tags. Without WebCodecs, raw frames go to `ffmpeg` instead (slower, same result).
+The server (`server.mjs`) ingests each song once: `ffprobe` reads the tags and the attached picture, then one `ffmpeg` pass decodes it to 48 kHz 24-bit PCM (for a sample-exact join later) and a small AAC preview for the browser. The page renders every frame itself (`public/renderer.js`): a WebGL shader draws the background, Canvas 2D draws the artwork, type, list, visualizer and dancers. Every frame is a pure function of the time, so the preview and the export are identical. On export the page encodes through WebCodecs (two hardware encoders working on two halves of the video at once) and streams the bitstream to the server from a worker thread, and the server stamps constant-frame-rate timestamps, joins the songs' PCM with the chosen gaps or crossfades, encodes the audio and writes an MP4 with BT.709 tags. Without WebCodecs, raw frames go to `ffmpeg` instead (slower, same result).
 
 ## Platforms and browsers
 

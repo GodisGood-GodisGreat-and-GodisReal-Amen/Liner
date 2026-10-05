@@ -70,8 +70,8 @@ A dropped video is transcoded once into an H.264 MP4 at up to 1080p with no B-fr
 ## Export (`public/app.js`)
 
 1. `POST /api/render/start` with the output settings and the song list (ids, trimmed ranges, gains); the server answers with a render id and starts encoding the soundtrack in parallel.
-2. The page probes `VideoEncoder.isConfigSupported` for H.264 or HEVC at that size. If it is supported, the video is split into two halves and two `Renderer`s with two hardware encoders work in lockstep (each half starts with a keyframe), and the Annex B bitstream is posted in chunks to `/api/render/:rid/chunk?part=n`. Length-prefixed output (some browsers ignore the `annexb` request) is converted on the fly. Without WebCodecs, raw RGBA frames are posted instead and the server runs `ffmpeg` with `libx264` or VideoToolbox.
-3. `POST /api/render/:rid/finish`: the server stamps constant-frame-rate timestamps on the bitstream (`setts`), adds BT.709 colour tags, concatenates the parts, muxes them with the finished soundtrack into `Exports/<name>.mp4` and reports the size.
+2. The page probes `VideoEncoder.isConfigSupported` for H.264 or HEVC at that size. If it is supported, the video is split into two halves and two `Renderer`s with two hardware encoders work in lockstep (each half starts with a keyframe), and the Annex B bitstream is posted in slices of a few seconds to `/api/render/:rid/chunk?part=n`. Length-prefixed output (some browsers ignore the `annexb` request) is converted on the fly. The posting is done by `public/upload-worker.js`, which receives each slice's buffer by transfer: when the main thread did it, pushing the bytes through the network stack starved the hardware encoder (296 fps instead of 465 at 1080p). Without WebCodecs, raw RGBA frames are posted instead and the server runs `ffmpeg` with `libx264` or VideoToolbox. At the end the export prints a breakdown of its time (drawing, encoder waits, uploads, finishing) to the console.
+3. `POST /api/render/:rid/finish`: the server stamps constant-frame-rate timestamps on the bitstream (`setts`), adds BT.709 colour tags, reads the two parts back to back through ffmpeg's `concat:` protocol (no copy is written first), muxes them with the finished soundtrack into `Exports/<name>.mp4` and reports the size.
 
 The soundtrack is built by `feedPcm`: lead silence, each song's trimmed range with its fades and gain, the gaps or the equal-power crossfades, the tail, piped into `ffmpeg` with the chosen bass filter and encoded with `aac_at`/`aac` at 320 kb/s or `alac`. Audio filters are always prefixed with `aformat=sample_fmts=fltp` because an `s24le` input would otherwise negotiate integer processing that clips before the limiter.
 
@@ -83,7 +83,7 @@ The mix (song order, every setting, trims, captions, dancers) lives in the brows
 
 `APP_VERSION` is defined in both `server.mjs` and `public/app.js` and must match. The server rewrites the page's `src` and `href` URLs with `?v=<version>` so a browser never reuses a stale script, and the page compares the two versions at start and says which side is older.
 
-`node server.mjs` runs a supervisor process that spawns the real server (with `LINER_CHILD=1`) and restarts it when one of the four `.mjs` modules changes on disk, after `node --check` passes and once `/api/health` reports nothing is busy. A crash loop backs off from 1 to 10 s. `LINER_NO_SUPERVISOR=1` runs the server directly.
+`node server.mjs` runs a supervisor process that spawns the real server (with `LINER_CHILD=1`) and restarts it when one of the `.mjs` modules changes on disk, after `node --check` passes and once `/api/health` reports nothing is busy. It watches the folder with one event-driven watcher and compares the modules' modification times, so it costs nothing while idle and an unrelated file never triggers a restart. A crash loop backs off from 1 to 10 s. `LINER_NO_SUPERVISOR=1` runs the server directly.
 
 ## Security model
 
@@ -139,7 +139,7 @@ All responses are JSON unless noted. Ids are hex strings.
 
 | | |
 | --- | --- |
-| 1080p30 render + hardware H.264 encode | about 300 frames per second (a 2-minute mix in 13 s) |
+| 1080p30 render + hardware H.264 encode | about 465 frames per second (an 8-minute mix in 36 s) |
 | 4K30 | about 60–110 frames per second |
 | Drawing alone at 1080p | 0.7 ms per frame; the encoder is the bottleneck |
 | Two encoders instead of one | about 35 % faster; a third gains nothing |

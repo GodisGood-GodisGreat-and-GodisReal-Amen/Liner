@@ -10,7 +10,7 @@ const icon = (name) => `<svg aria-hidden="true"><use href="#i-${name}"/></svg>`;
 const nextFrame = () => new Promise((r) => { const ch = new MessageChannel(); ch.port1.onmessage = () => r(); ch.port2.postMessage(0); });
 const fmtBytes = (n) => (n >= 1e9 ? (n / 1e9).toFixed(2) + ' GB' : n >= 1e6 ? (n / 1e6).toFixed(1) + ' MB' : Math.round(n / 1e3) + ' KB');
 const AUDIO_EXT = /\.(mp3|flac|wav|wave|aif|aiff|aifc|m4a|m4b|aac|ogg|oga|opus|wma|caf|alac|mp4|mid|midi|kar|rmi|smf)$/i; // MIDI files are rendered to sound by the server
-const APP_VERSION = '1.1.0'; // must match server.mjs; an older server (or an older page) is told apart at start
+const APP_VERSION = '1.1.1'; // must match server.mjs; an older server (or an older page) is told apart at start
 const cmpVersion = (a, b) => { const A = String(a).split('.').map(Number), B = String(b).split('.').map(Number); for (let i = 0; i < Math.max(A.length, B.length); i++) { const d = (A[i] || 0) - (B[i] || 0); if (d) return d; } return 0; };
 const IS_MAC = /Mac|iPhone|iPad/.test(navigator.platform || '') || /Macintosh/.test(navigator.userAgent);
 const IS_WIN = /Win/.test(navigator.platform || '');
@@ -120,7 +120,8 @@ const api = {
     });
   },
   renderStart: (params) => api.json('/api/render/start', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(params) }),
-  chunk: async (rid, body, part = 0) => { const r = await fetch(`/api/render/${rid}/chunk${part ? `?part=${part}` : ''}`, { method: 'POST', body }); if (!r.ok) { const b = await r.json().catch(() => ({})); throw new Error(b.error || 'The server stopped accepting frames.'); } },
+  chunkUrl: (rid, part = 0) => `/api/render/${rid}/chunk${part ? `?part=${part}` : ''}`,
+  chunk: async (rid, body, part = 0) => { const r = await fetch(api.chunkUrl(rid, part), { method: 'POST', body }); if (!r.ok) { const b = await r.json().catch(() => ({})); throw new Error(b.error || 'The server stopped accepting frames.'); } },
   finish: (rid) => api.json(`/api/render/${rid}/finish`, { method: 'POST' }),
   status: (rid) => api.json(`/api/render/${rid}/status`),
   cancel: (rid) => api.json(`/api/render/${rid}/cancel`, { method: 'POST' }).catch(() => {}),
@@ -441,7 +442,7 @@ function updateRow(s) {
   const idx = row.querySelector('.index'), num = idx.querySelector('.num');
   const playable = preview.renderer && preview.renderer.songs.indexOf(s) === currentSongIndex();
   if (playable && !s.uploading && !s.error) { if (!num.querySelector('.eq')) num.innerHTML = '<span class="eq"><i></i><i></i><i></i></span>'; }
-  else num.textContent = String(i + 1);
+  else if (num.firstElementChild || num.textContent !== String(i + 1)) num.textContent = String(i + 1);
   row.classList.toggle('can-play', !!s.ready && !s.error && !s.uploading);
   const vb = row.querySelector('.row-video');
   if (vb) { // lit only when the song's video is really there; quiet while it is being prepared; red when it failed
@@ -457,15 +458,17 @@ function updateRow(s) {
   if (document.activeElement !== t && t.value !== (s.title || '')) t.value = s.title || '';
   if (document.activeElement !== a && a.value !== (s.artist || '')) a.value = s.artist || '';
   const dur = row.querySelector('.dur');
-  if (s.uploading) dur.innerHTML = `<svg class="spin">${'<use href="#i-spinner"/>'}</svg>`;
-  else if (s.error) { dur.textContent = 'Error'; dur.dataset.tip = s.error; }
-  else if (!s.ready) dur.innerHTML = `<span>${formatTime(songLength(s))}</span><svg class="spin" data-tip="Preparing audio">${'<use href="#i-spinner"/>'}</svg>`;
-  else {
+  if (s.uploading) { delete dur.dataset.sig; dur.innerHTML = `<svg class="spin">${'<use href="#i-spinner"/>'}</svg>`; }
+  else if (s.error) { delete dur.dataset.sig; dur.textContent = 'Error'; dur.dataset.tip = s.error; }
+  else if (!s.ready) { delete dur.dataset.sig; dur.innerHTML = `<span>${formatTime(songLength(s))}</span><svg class="spin" data-tip="Preparing audio">${'<use href="#i-spinner"/>'}</svg>`; }
+  else { // rebuilt only when something in it changes: this runs for every row on every change to the mix
     const esc = (t) => String(t).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
     const midi = s.midi ? `<span class="midi-mark" data-tip="${esc(s.midi.about ? `From a MIDI file, rendered with ${s.midi.about}` : 'From a MIDI file')}">MIDI</span>` : '';
     const mark = midi + (state.dancers.length && dancerActive(s, state.dance) === true ? '<svg class="dance-mark" data-tip="The dancers appear on this track"><use href="#i-dancer"/></svg>' : '');
-    if (s.trim) { dur.innerHTML = `${mark}<svg class="trim-mark"><use href="#i-scissors"/></svg><span></span>`; dur.lastChild.textContent = formatTime(songLength(s)); dur.dataset.tip = `Trimmed from ${formatTime(s.duration)}`; }
-    else { dur.innerHTML = `${mark}<span></span>`; dur.lastChild.textContent = formatTime(s.duration); delete dur.dataset.tip; }
+    const html = s.trim ? `${mark}<svg class="trim-mark"><use href="#i-scissors"/></svg><span></span>` : `${mark}<span></span>`;
+    const text = formatTime(s.trim ? songLength(s) : s.duration), tip = s.trim ? `Trimmed from ${formatTime(s.duration)}` : '';
+    const sig = `${html}\u0001${text}\u0001${tip}`;
+    if (dur.dataset.sig !== sig) { dur.innerHTML = html; dur.lastChild.textContent = text; if (tip) dur.dataset.tip = tip; else delete dur.dataset.tip; dur.dataset.sig = sig; }
   }
   let bar = row.querySelector('.upload-bar');
   if (s.uploading && !bar) { bar = el('div', 'upload-bar'); row.append(bar); }
@@ -1067,6 +1070,24 @@ function initTabs() {
 
 // ---------------------------------------------------------------- export
 const caps = { server: null, webcodecs: 'VideoEncoder' in window, hevcBrowser: false, hevcServer: false };
+// The export's uploads, done by a worker so the main thread keeps feeding the encoder; the request's bytes are
+// transferred to it, not copied. Falls back to posting from here when workers are unavailable.
+function makeUploader() {
+  let worker = null, seq = 0;
+  const waiting = new Map();
+  try {
+    worker = new Worker(`./upload-worker.js?v=${APP_VERSION}`);
+    worker.onmessage = (e) => { const w = waiting.get(e.data.id); if (!w) return; waiting.delete(e.data.id); if (e.data.ok) w.resolve(); else w.reject(new Error(e.data.error)); };
+    worker.onerror = () => { for (const w of waiting.values()) w.reject(new Error('The upload worker failed.')); waiting.clear(); };
+  } catch { worker = null; }
+  return {
+    post: (url, body) => {
+      if (!worker) return fetch(url, { method: 'POST', body }).then(async (r) => { if (!r.ok) { const b = await r.json().catch(() => ({})); throw new Error(b.error || 'The server stopped accepting frames.'); } });
+      return new Promise((resolve, reject) => { const id = ++seq; waiting.set(id, { resolve, reject }); worker.postMessage({ id, url, body }, [body.buffer]); });
+    },
+    close: () => { if (worker) worker.terminate(); worker = null; for (const w of waiting.values()) w.reject(new Error('cancelled')); waiting.clear(); },
+  };
+}
 function avcCodecString(w, h, fps) {
   const mbs = Math.ceil(w / 16) * Math.ceil(h / 16), mbps = mbs * fps;
   const levels = [[0x28, 8192, 245760], [0x2a, 8704, 522240], [0x32, 22080, 589824], [0x33, 36864, 983040], [0x34, 36864, 2073600], [0x3c, 139264, 4177920], [0x3d, 139264, 8355840], [0x3e, 139264, 16711680]];
@@ -1187,7 +1208,7 @@ async function startExport(opts = {}) {
     vmetas.set(id, m);
   }
   if (videoIds.length && typeof VideoDecoder === 'undefined') return toast('This browser cannot decode videos for the export.', { error: true });
-  let vsrc = null, Rs = null;
+  let vsrc = null, Rs = null, uploader = null;
   const o = { ...state.output };
   const name = (only ? (only.title || 'Untitled') : (state.output.fileName || state.title || 'Untitled mix')).trim();
   job = { cancelled: false, rid: null, encoders: null };
@@ -1224,8 +1245,11 @@ async function startExport(opts = {}) {
     const readyFrames = async (p, t) => { for (const need of Rs[p].videoNeeds(t)) await srcFor(p, need.id).frameAt(videoFrameIndex(vmetas.get(need.id), need.vt)); };
     let encError = null;
     // uploads run in the background, one request after another per part so the server writes them in order; the render
-    // loop only waits when the backlog grows large, so a slow connection no longer stalls rendering and encoding
+    // loop only waits when the backlog grows large, so a slow connection no longer stalls rendering and encoding.
+    // They go through a worker: pushing hundreds of megabytes through fetch costs the thread that does it, and when
+    // that was the main thread the hardware encoder sat waiting for frames a third of the time.
     const inflight = new Array(parts).fill(null), queued = new Array(parts).fill(0), pending = Array.from({ length: parts }, () => []), pendingBytes = new Array(parts).fill(0);
+    uploader = makeUploader();
     const BACKLOG = mode === 'raw' ? 96e6 : 48e6;
     const flush = (p) => {
       if (!pending[p].length) return;
@@ -1233,9 +1257,10 @@ async function startExport(opts = {}) {
       let body;
       if (pending[p].length === 1) body = pending[p][0];
       else { body = new Uint8Array(pendingBytes[p]); let o2 = 0; for (const part of pending[p]) { body.set(part, o2); o2 += part.byteLength; } }
-      pending[p] = []; pendingBytes[p] = 0;
+      pending[p] = []; pendingBytes[p] = 0; stat.flushes++;
       queued[p] += body.byteLength;
-      inflight[p] = (inflight[p] || Promise.resolve()).then(() => api.chunk(rid, body, p)).then(() => { queued[p] -= body.byteLength; }, (e) => { encError = encError || e; queued[p] -= body.byteLength; });
+      const bytes = body.byteLength;
+      inflight[p] = (inflight[p] || Promise.resolve()).then(() => uploader.post(api.chunkUrl(rid, p), body)).then(() => { queued[p] -= bytes; }, (e) => { encError = encError || e; queued[p] -= bytes; });
     };
     const encoders = [];
     if (mode === 'stream') {
@@ -1243,12 +1268,14 @@ async function startExport(opts = {}) {
         let paramSets = null, streamFormat = null;
         const encoder = new VideoEncoder({
           output: (chunk, meta) => {
+            const to = performance.now();
             const desc = meta && meta.decoderConfig && meta.decoderConfig.description;
             if (desc) paramSets = parseParameterSets(desc instanceof ArrayBuffer ? new Uint8Array(desc) : new Uint8Array(desc.buffer, desc.byteOffset, desc.byteLength), o.codec);
             const buf = new Uint8Array(chunk.byteLength); chunk.copyTo(buf);
             if (streamFormat == null) { streamFormat = isAnnexB(buf) ? 'annexb' : 'length'; if (streamFormat === 'length' && p === 0) console.info('Liner: encoder emits length-prefixed NAL units; converting to Annex B'); }
             const out = streamFormat === 'annexb' ? buf : toAnnexB(buf, chunk.type === 'key', paramSets);
             pending[p].push(out); pendingBytes[p] += out.byteLength;
+            stat.output += performance.now() - to;
           },
           error: (e) => { encError = encError || e; },
         });
@@ -1258,6 +1285,7 @@ async function startExport(opts = {}) {
       job.encoders = encoders;
     }
     const t0 = performance.now();
+    const stat = { draw: 0, encode: 0, encWait: 0, upWait: 0, ui: 0, yield: 0, output: 0, flushes: 0 }; // where the export's time goes, for the console
     const frameDur = 1e6 / o.fps;
     const starts = [], ends = [];
     for (let p = 0; p < parts; p++) { starts.push(Math.floor((N * p) / parts)); ends.push(Math.floor((N * (p + 1)) / parts)); }
@@ -1270,33 +1298,41 @@ async function startExport(opts = {}) {
         const i = starts[p] + k;
         if (i >= ends[p]) continue;
         if (vsrc) await readyFrames(p, i / o.fps);
+        let ts = performance.now();
         Rs[p].draw(i / o.fps, i);
+        stat.draw += performance.now() - ts;
         if (mode === 'stream') {
+          ts = performance.now();
           const frame = new VideoFrame(Rs[p].canvas, { timestamp: Math.round(k * frameDur), duration: Math.round(frameDur) });
           encoders[p].encode(frame, { keyFrame: k % (o.fps * 2) === 0 }); // every part begins with a keyframe, so the parts join cleanly
           frame.close();
-          if (encoders[p].encodeQueueSize > 8) await new Promise((r) => { const h = () => { encoders[p].removeEventListener('dequeue', h); r(); }; encoders[p].addEventListener('dequeue', h); setTimeout(h, 100); });
-          if (pendingBytes[p] > 3e6 || k % o.fps === o.fps - 1) flush(p);
+          stat.encode += performance.now() - ts;
+          if (encoders[p].encodeQueueSize > 8) { ts = performance.now(); await new Promise((r) => { const h = () => { encoders[p].removeEventListener('dequeue', h); r(); }; encoders[p].addEventListener('dequeue', h); setTimeout(h, 100); }); stat.encWait += performance.now() - ts; }
+          if (pendingBytes[p] > 4e6 || k % (o.fps * 4) === o.fps * 4 - 1) flush(p); // a few seconds of video per request: fewer round trips, the same bytes
         } else {
           const px = Rs[p].ctx.getImageData(0, 0, o.width, o.height);
           pending[p].push(new Uint8Array(px.data.buffer)); pendingBytes[p] += px.data.byteLength;
           if (pendingBytes[p] >= 24e6) flush(p); // a few frames per request; the final flush sends the rest
         }
-        if (queued[p] > BACKLOG && inflight[p]) await inflight[p];
+        if (queued[p] > BACKLOG && inflight[p]) { const tw = performance.now(); await inflight[p]; stat.upWait += performance.now() - tw; }
         done++;
       }
       const now = performance.now();
       if (now - lastUi > 120 || k === longest - 1) {
         lastUi = now;
+        const tu = now;
         const el = (now - t0) / 1000, fps = done / el, eta = fps > 0 ? (N - done) / fps : 0;
         setProgress(done / N, `${Math.floor(done / N * 100)}%`, `Frame ${done.toLocaleString()} of ${N.toLocaleString()} · ${fps.toFixed(0)} fps · ${eta > 90 ? `about ${Math.ceil(eta / 60)} min left` : `${Math.ceil(eta)} s left`}`);
         if (k % o.fps < 1 || k === longest - 1) sx.drawImage(R.canvas, 0, 0, sc.width, sc.height);
+        const ty = performance.now(); stat.ui += ty - tu;
         await nextFrame();
+        stat.yield += performance.now() - ty;
       }
     }
     if (mode === 'stream') { await Promise.all(encoders.map((e) => e.flush())); encoders.forEach((e) => e.close()); job.encoders = null; }
     for (let p = 0; p < parts; p++) { flush(p); if (inflight[p]) await inflight[p]; }
     if (encError) throw encError;
+    const renderSecs = (performance.now() - t0) / 1000, tFinish = performance.now();
     setPhase('finish'); setProgress(1, '100%', 'Encoding audio…');
     sheet.bar.parentElement.classList.add('is-indeterminate');
     await api.finish(rid);
@@ -1309,6 +1345,8 @@ async function startExport(opts = {}) {
       if (status.phase === 'audio' && status.progress > 0) { sheet.bar.parentElement.classList.remove('is-indeterminate'); setProgress(status.progress, `${Math.floor(status.progress * 100)}%`, 'Encoding audio and writing the file…'); }
     }
     if (status.phase !== 'done') throw new Error(status.error || 'Export was cancelled.');
+    const finishSecs = (performance.now() - tFinish) / 1000, s1 = (ms) => (ms / 1000).toFixed(1) + ' s';
+    console.info(`Liner export: ${N} frames in ${renderSecs.toFixed(1)} s (${(N / renderSecs).toFixed(0)} fps) — drawing ${s1(stat.draw)}, encoder calls ${s1(stat.encode)}, waiting for the encoder ${s1(stat.encWait)}, waiting for uploads ${s1(stat.upWait)}, progress UI ${s1(stat.ui)} + yields ${s1(stat.yield)}, packaging output ${s1(stat.output)}, ${stat.flushes} uploads; finishing ${finishSecs.toFixed(1)} s`);
     sheet.bar.parentElement.classList.remove('is-indeterminate');
     setPhase('done'); setProgress(1, '100%', 'Finished');
     if (vsrc) await readyFrames(0, Math.min(total, Math.max(tl.fadeIn, 1.25))).catch(() => {});
@@ -1336,6 +1374,7 @@ async function startExport(opts = {}) {
       sheet.cancel.hidden = true; sheet.done.hidden = false; sheet.done.textContent = 'Close';
     }
   } finally {
+    if (uploader) { uploader.close(); uploader = null; }
     if (Rs) for (const R2 of Rs) R2.bg.dispose(); else if (R) R.bg.dispose(); // every renderer, including a second one left by a failed or cancelled export
     if (vsrc) for (const m of vsrc) for (const v of m.values()) v.close();
     job = null;

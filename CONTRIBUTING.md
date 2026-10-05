@@ -28,6 +28,7 @@ npm start
 | `public/app.js` | state, undo history, the player, every sheet, the export driver |
 | `public/renderer.js` | the frame: WebGL background, Canvas 2D everything else, layout and timeline |
 | `public/h264.js` | frame-exact decoding of background videos with WebCodecs |
+| `public/upload-worker.js` | posts the export's video slices to the server off the main thread |
 | `public/styles.css` | the look of the editor |
 | `tools/logo.py` | regenerates the Liner mark (`favicon.svg` and the `#i-liner` symbol) |
 

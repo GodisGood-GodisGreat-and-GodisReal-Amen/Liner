@@ -72,7 +72,7 @@ Three small MIDI files to try are in `docs/demo/` (a band piece with a tempo cha
 6. **Choose the output.** In the Output tab pick a resolution (720p to 4K, or custom), frame rate, codec and audio format. The estimated file size updates as you go.
 7. **Export.** Press **Export** (⌘E or Ctrl+E). A sheet shows the progress and the frames as they are encoded. When it is done, **Open** plays the file and **Reveal** shows it in your file manager. The file is in `Exports/`.
 
-A two-minute 1080p30 mix takes about 15 seconds on an Apple-silicon Mac; 4K takes roughly four times longer.
+A two-minute 1080p30 mix takes about 10 seconds on an Apple-silicon Mac; 4K takes roughly four times longer.
 
 ## 5. Where things go
 
