@@ -22,6 +22,8 @@ npm start
 | `analysis.mjs` | liveliness, tempo, beats and the visualizer's spectrum, in a worker thread |
 | `sprites.mjs` | dancer atlases from GIFs, animations, videos or stills |
 | `backgrounds.mjs` | background videos (transcode, raw stream, poster) |
+| `midi.mjs` | MIDI files: parser, the renderer chain (FluidSynth, macOS, built-in synthesizer in a worker), piano-roll covers |
+| `tools/midi-render.swift` | the macOS MIDI renderer, compiled by `midi.mjs` on first use |
 | `public/index.html` | the page: every control is declared here with `data-seg`, `data-range`, `data-switch` attributes bound by `app.js` |
 | `public/app.js` | state, undo history, the player, every sheet, the export driver |
 | `public/renderer.js` | the frame: WebGL background, Canvas 2D everything else, layout and timeline |
@@ -37,7 +39,7 @@ npm start
 - **Everything the frame draws must be a pure function of the time**, so that the preview and the export stay identical. No per-frame state in the renderer.
 - **Audio is sample-exact on the server.** Never resample or trim in the browser.
 - **Comments say why, in plain words.** The code base reads like prose on purpose; keep that voice.
-- **Bump `APP_VERSION`** in both `server.mjs` and `public/app.js` with every release, and `ANALYSIS_VERSION` / `SPECTRUM_VERSION` / `SPRITE_VERSION` when their outputs change so caches are rebuilt.
+- **Bump `APP_VERSION`** in both `server.mjs` and `public/app.js` with every release, and `ANALYSIS_VERSION` / `SPECTRUM_VERSION` / `SPRITE_VERSION` when their outputs change so caches are rebuilt. A MIDI song keeps its rendered audio; delete the song and add it again to hear a changed synthesizer.
 - **The server listens on the loopback interface and refuses cross-origin requests.** Keep every subprocess on `execFile`/`spawn` with argument arrays, and keep ids hex-only.
 - Match the existing style: two-space indent, single quotes, semicolons, one statement per line unless it is a short guard.
 

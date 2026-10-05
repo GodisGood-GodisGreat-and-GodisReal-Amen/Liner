@@ -13,9 +13,11 @@ browser (public/)                           server (Node, zero dependencies)
 │             WebGL bg + Canvas  │          │              spectrum (worker thread) │
 │ h264.js     frame-exact video  │          │ sprites.mjs  dancer atlases          │
 │             decoding (WebCodecs)│         │ backgrounds.mjs video backgrounds    │
+│                                │          │ midi.mjs     MIDI parsing, rendering,│
+│                                │          │              piano-roll covers       │
 └────────────────────────────────┘          └──────────────┬───────────────────────┘
                                                            │ execFile / spawn
-                                                   ffmpeg · ffprobe · yt-dlp
+                                        ffmpeg · ffprobe · yt-dlp · fluidsynth · swiftc
 ```
 
 Two rules shape everything:
@@ -33,6 +35,16 @@ Two rules shape everything:
 4. `meta.json` records everything; `exactDuration = samples / 48000`.
 
 Decodes are serialised through one promise chain so a big drop does not fork twenty ffmpegs. Later, on demand, the song also gets `waveform-1200.json` (peak envelope for the trimmer and the waveform progress bar), `spectrum-v1.bin` (the visualizer's band levels) and an `analysis` entry in `meta.json` (liveliness, tempo, beats), all computed from `pcm.raw`.
+
+## MIDI files (`midi.mjs`)
+
+A file that starts with `MThd` (or has a MIDI extension) takes a different path through `ingestPath`: `parseMidi` reads the Standard MIDI File (formats 0, 1 and 2, running status, the tempo map, SMPTE divisions, sequence and track names, karaoke `@T` titles) into a time-stamped event list and the notes with their lengths, and the song is registered at once with the parsed length and title. The decode queue then renders it to `render.wav` with the first renderer that succeeds:
+
+- **FluidSynth** (`fluidsynth -niq -F …` with the SoundFont found in `soundfonts/`, `LINER_SOUNDFONT` or the usual system folders), then peak-normalised with ffmpeg.
+- **CoreAudio** on macOS: `tools/midi-render.swift` is compiled with `swiftc` into `.cache/tools/` (keyed by a hash of the source) and drives `AVAudioSequencer` into Apple's DLS General MIDI synthesizer in the engine's offline manual-rendering mode, trims the tail and normalises to −1 dBFS.
+- **Built-in**: a worker thread runs the synthesizer at the bottom of `midi.mjs`. Every General MIDI program is a pair of wavetable spectra (bright and dark, generated additively and mip-levelled so high notes do not alias) that each voice crossfades between over time, with an ADSR envelope, optional vibrato and unison detuning; drums are procedural (swept sines, shaped noise); a small Schroeder reverb sits on a send bus; the mix is written as float to a scratch file and converted to a 24-bit WAV normalised to −1 dBFS.
+
+After rendering, `drawPianoRoll` paints the notes (one colour per channel, drums in a lane underneath, octave and bar lines) into a 1400 px cover through ffmpeg's rawvideo input, and the normal decode continues from `render.wav`. The song's `meta.midi` records which renderer was used; `/api/health` reports the renderers available.
 
 ## Analysis (`analysis.mjs`)
 
@@ -82,7 +94,8 @@ The server listens on `127.0.0.1` only. State-changing requests (`POST`, `PATCH`
 ```
 .cache/
   songs/<id>/        source.<ext>  meta.json  pcm.raw  preview.m4a  cover.png  cover-embedded.png
-                     waveform-1200.json  spectrum-v1.bin
+                     waveform-1200.json  spectrum-v1.bin  render.wav (a MIDI file's audio)
+  tools/             the compiled macOS MIDI renderer
   sprites/<id>/      sprite.json  src/  atlas.png  thumb.png
   backgrounds/<id>/  meta.json  video.mp4  stream.h264  poster.jpg
   logos/<id>.png     + <id>.json

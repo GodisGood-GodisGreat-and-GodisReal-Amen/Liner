@@ -24,6 +24,12 @@
 
 **"Add from a link" says yt-dlp is not installed.** Install it (`brew install yt-dlp`, `pip install yt-dlp` or `winget install yt-dlp.yt-dlp`) and restart Liner, or set `YTDLP=/path/to/yt-dlp`. If a download fails, update yt-dlp first: sites change often.
 
+**A MIDI file sounds thin or wrong.** Liner used its built-in synthesizer or the macOS one. For real instrument sounds install FluidSynth and a General MIDI SoundFont (see [Getting started](getting-started.md#midi-files)); the row's *MIDI* mark says which synthesizer rendered the song. Re-add the file after installing them. `LINER_MIDI=builtin` forces the built-in one if the macOS synthesizer misbehaves.
+
+**"The MIDI file has no notes."** The file only holds tempo or text events, or every note is on a channel the file never sounds. Open it in a sequencer to check.
+
+**A MIDI file is rejected or silent on macOS and the terminal mentions swiftc.** The Xcode Command Line Tools are missing or broken (`xcode-select --install`); until then Liner falls back to its built-in synthesizer automatically.
+
 **The cover-art finder returns nothing.** The query is built from the title, artist and album; edit it in the sheet (artist and song, without "feat." or "official video") and search again. The finder needs internet access to itunes.apple.com, api.deezer.com, musicbrainz.org and coverartarchive.org.
 
 **Dancers do not appear.** In *Auto* mode they only appear on tracks whose liveliness is above the Sensitivity threshold; open *Review tracks…* to see the scores or force a track On, or choose *Every track*. Dancers also pop in only once a track's audio starts, so the intro and the first second of a song are empty by design.

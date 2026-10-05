@@ -4,6 +4,9 @@ Exports/
 Downloads/
 Mixes/
 
+# SoundFonts you drop in for FluidSynth (large, licensed separately)
+soundfonts/
+
 # OS and editor leftovers
 .DS_Store
 Thumbs.db

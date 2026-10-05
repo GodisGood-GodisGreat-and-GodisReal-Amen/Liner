@@ -18,6 +18,7 @@ import { Worker } from 'node:worker_threads';
 import { initSprites, listSprites, getSprite, registerSprite, createSprite, addSource, buildSprite, deleteSprite, renameSprite, publicSprite, spriteDir } from './sprites.mjs';
 import { ANALYSIS_VERSION, SPECTRUM_VERSION } from './analysis.mjs';
 import { initBackgrounds, listBackgrounds, getBackground, ingestBackground, ingestBackgroundFromPath, restoreBackground, deleteBackground, backgroundDir, backgroundJobs } from './backgrounds.mjs';
+import { MIDI_EXT, midiOffset, parseMidi, initMidi, renderMidi, drawPianoRoll, describeRenderer, midiCaps } from './midi.mjs';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC = path.join(ROOT, 'public');
@@ -31,7 +32,7 @@ const MIXES = path.join(ROOT, 'Mixes'); // saved copies of mixes, with their son
 const EXPORTS = path.join(ROOT, 'Exports');
 const DOWNLOADS = path.join(ROOT, 'Downloads');
 const PORT = Number(process.env.PORT) || 8865;
-const APP_VERSION = '1.0.0'; // bumped with every release; public/app.js carries the same string and the page compares the two
+const APP_VERSION = '1.1.0'; // bumped with every release; public/app.js carries the same string and the page compares the two
 const FFMPEG = process.env.FFMPEG || 'ffmpeg';
 const FFPROBE = process.env.FFPROBE || 'ffprobe';
 const SAMPLE_RATE = 48000;
@@ -89,7 +90,7 @@ const safeName = (s) => String(s || '').replace(/[\/\\:*?"<>|\x00-\x1f]/g, '').r
 const fmtBytes = (n) => n >= 1e9 ? (n / 1e9).toFixed(2) + ' GB' : n >= 1e6 ? (n / 1e6).toFixed(1) + ' MB' : Math.round(n / 1e3) + ' KB';
 
 // ---------------------------------------------------------------- capabilities
-const caps = { h264: null, hevc: null, aac: null, alac: null, ffmpeg: null, ytdlp: null, x264: false };
+const caps = { h264: null, hevc: null, aac: null, alac: null, ffmpeg: null, ytdlp: null, x264: false, midi: midiCaps };
 async function detectCapabilities() {
   try {
     const { stdout: v } = await run(FFMPEG, ['-hide_banner', '-version']);
@@ -117,8 +118,10 @@ async function saveMeta(meta) { await fsp.writeFile(path.join(songDir(meta.id), 
 function publicMeta(m) {
   const { id, fileName, title, artist, album, duration, sampleRate, channels, codec, bits, cover, coverVersion, customCover, ready, error, exactDuration, samples, createdAt, size, coverMode, coverInfo } = m;
   const ownReady = m.ownVideoStatus === 'ready' && m.ownVideo && getBackground(m.ownVideo) && getBackground(m.ownVideo).ready;
+  // a song made from a MIDI file says which synthesizer rendered it
+  const midi = m.midi ? { status: m.midi.status, renderer: m.midi.renderer || null, soundfont: m.midi.soundfont || null, tracks: m.midi.tracks, notes: m.midi.notes, tempo: m.midi.tempo, about: m.midi.renderer ? describeRenderer(m.midi.renderer, m.midi.soundfont) : null } : null;
   return {
-    id, fileName, title, artist, album, duration, sampleRate, channels, codec, bits, cover, coverVersion, customCover, ready, error, exactDuration, samples, createdAt, size, coverMode: coverMode || (cover ? 'embedded' : 'none'), coverInfo: coverInfo || null,
+    id, fileName, title, artist, album, duration, sampleRate, channels, codec, bits, cover, coverVersion, customCover, ready, error, exactDuration, samples, createdAt, size, coverMode: coverMode || (cover ? 'embedded' : 'none'), coverInfo: coverInfo || null, midi,
     // the song's own video: the picture of the file it came from, or the video behind the link it was downloaded from, prepared on request
     hasVideo: !!m.hasVideo, videoSource: m.hasVideo ? 'file' : m.sourceUrl ? 'link' : null, ownVideo: ownReady ? m.ownVideo : null, ownVideoStatus: ownReady ? 'ready' : m.ownVideoStatus === 'preparing' ? 'preparing' : m.ownVideoStatus === 'error' ? 'error' : 'none', ownVideoError: m.ownVideoError || null,
   };
@@ -216,6 +219,21 @@ async function ingestPath(srcPath, fileName, { move = false, title, artist, albu
       cover: false, coverVersion: 0, customCover: false, ready: false, error: null, exactDuration: null, samples: null, createdAt: Date.now(),
       hasVideo: false, sourceUrl, ownVideo: null, ownVideoStatus: 'none', ownVideoError: null,
     };
+    // a MIDI file holds notes, not sound: it is rendered to audio in the decode queue (midi.mjs) and its notes become the cover
+    const head = Buffer.alloc(4096);
+    { const fh = await fsp.open(src, 'r'); try { await fh.read(head, 0, head.length, 0); } finally { await fh.close(); } }
+    if (midiOffset(head) >= 0 || MIDI_EXT.test(ext)) {
+      if (st.size > 16 * 1024 * 1024) throw Object.assign(new Error('The MIDI file is too large.'), { status: 413 });
+      const parsed = parseMidi(await fsp.readFile(src));
+      if (!parsed.noteCount || parsed.duration <= 0.05) throw Object.assign(new Error('The MIDI file has no notes.'), { status: 415 });
+      meta.midi = { status: 'pending', tracks: parsed.trackCount, notes: parsed.noteCount, tempo: parsed.tempo, length: parsed.duration, copyright: parsed.copyright || '' };
+      Object.assign(meta, { duration: parsed.duration, sampleRate: SAMPLE_RATE, channels: 2, codec: 'midi', bits: 24, title: title || parsed.title, artist: artist || '', album: album || '', coverMode: 'none', coverInfo: null });
+      if (!meta.title) { const g = titleFromFileName(fileName); meta.title = g.title; if (!meta.artist) meta.artist = g.artist; }
+      songs.set(id, meta);
+      await saveMeta(meta);
+      queueDecode(meta);
+      return meta;
+    }
     const probe = await probeFile(src);
     Object.assign(meta, probe.meta);
     if (title) meta.title = title;
@@ -250,11 +268,29 @@ function queueDecode(meta) { decodeChain = decodeChain.then(() => decode(meta)).
 async function decode(meta) {
   if (!songs.has(meta.id)) return;
   const dir = songDir(meta.id);
-  const src = path.join(dir, meta.src);
+  let src = path.join(dir, meta.src);
   const pcm = path.join(dir, 'pcm.raw');
   const prev = path.join(dir, 'preview.m4a');
   const aac = caps.aac || 'aac';
   try {
+    if (meta.midi) { // render the notes first (once), and draw them as the cover unless one was chosen already
+      const wav = path.join(dir, 'render.wav');
+      if (meta.midi.status !== 'rendered' || !fs.existsSync(wav)) {
+        const r = await renderMidi(src, wav);
+        Object.assign(meta.midi, { status: 'rendered', renderer: r.renderer, soundfont: r.soundfont, seconds: r.seconds });
+        log(`song ${meta.id}: MIDI rendered with ${describeRenderer(r.renderer, r.soundfont)} (${r.seconds.toFixed(1)} s)`);
+        if (!meta.cover) {
+          try {
+            const parsed = parseMidi(await fsp.readFile(src)), embedded = path.join(dir, 'cover-embedded.png');
+            const size = await drawPianoRoll(parsed, embedded);
+            await fsp.copyFile(embedded, path.join(dir, 'cover.png'));
+            Object.assign(meta, { cover: true, coverVersion: (meta.coverVersion || 0) + 1, coverMode: 'midi', coverInfo: { label: 'Piano roll of the notes', w: size.w, h: size.h } });
+          } catch (e) { log('piano roll failed for', meta.fileName, e.message); }
+        }
+        if (songs.has(meta.id)) await saveMeta(meta);
+      }
+      src = wav;
+    }
     await run(FFMPEG, ['-y', '-v', 'error', '-i', src,
       '-map', '0:a:0', '-vn', '-ac', '2', '-ar', String(SAMPLE_RATE), '-f', 's24le', '-c:a', 'pcm_s24le', pcm,
       '-map', '0:a:0', '-vn', '-ac', '2', '-ar', String(SAMPLE_RATE), '-c:a', aac, '-b:a', '160k', '-movflags', '+faststart', prev]);
@@ -265,8 +301,8 @@ async function decode(meta) {
     meta.ready = true;
     meta.error = null;
   } catch (e) {
-    meta.error = 'Could not decode this file.';
-    log('decode failed for', meta.fileName, (e.stderr || e.message).slice(0, 300));
+    meta.error = meta.midi && e.status ? e.message : 'Could not decode this file.';
+    log('decode failed for', meta.fileName, String(e.stderr || e.message).slice(0, 300));
   }
   if (songs.has(meta.id)) await saveMeta(meta);
 }
@@ -1249,7 +1285,7 @@ async function handle(req, res) {
       }
       if (req.method === 'DELETE') {
         const emb = path.join(dir, 'cover-embedded.png');
-        if (fs.existsSync(emb)) { await fsp.copyFile(emb, path.join(dir, 'cover.png')); s.cover = true; s.coverMode = s.coverMode === 'link' || (s.coverInfo && /link/i.test(s.coverInfo.label)) ? 'link' : 'embedded'; await setCoverInfo(s, dir, s.coverMode === 'link' ? 'Thumbnail from the link' : 'Embedded in the file'); }
+        if (fs.existsSync(emb)) { await fsp.copyFile(emb, path.join(dir, 'cover.png')); s.cover = true; s.coverMode = s.midi ? 'midi' : s.coverMode === 'link' || (s.coverInfo && /link/i.test(s.coverInfo.label)) ? 'link' : 'embedded'; await setCoverInfo(s, dir, s.coverMode === 'midi' ? 'Piano roll of the notes' : s.coverMode === 'link' ? 'Thumbnail from the link' : 'Embedded in the file'); }
         else { await fsp.rm(path.join(dir, 'cover.png'), { force: true }); s.cover = false; s.coverMode = 'none'; s.coverInfo = null; }
         s.customCover = false; s.coverVersion = (s.coverVersion || 0) + 1;
         await saveMeta(s);
@@ -1436,11 +1472,11 @@ async function handle(req, res) {
 
 // ---------------------------------------------------------------- supervisor
 // `node server.mjs` runs a small supervisor that starts the real server as a child process and starts it again
-// whenever one of its modules (server.mjs, analysis.mjs, sprites.mjs, backgrounds.mjs) changes on disk (once no export, download or analysis is in flight),
+// whenever one of its modules (server.mjs, analysis.mjs, sprites.mjs, backgrounds.mjs, midi.mjs) changes on disk (once no export, download or analysis is in flight),
 // so an update never needs a manual restart. Ctrl-C stops both. LINER_NO_SUPERVISOR=1 runs the server directly.
 const isSupervisor = !process.env.LINER_CHILD && !process.env.LINER_NO_SUPERVISOR;
 function supervise() {
-  const SELF = ['server.mjs', 'sprites.mjs', 'analysis.mjs', 'backgrounds.mjs'].map((f) => path.join(ROOT, f));
+  const SELF = ['server.mjs', 'sprites.mjs', 'analysis.mjs', 'backgrounds.mjs', 'midi.mjs'].map((f) => path.join(ROOT, f));
   let child = null, wantRestart = false, lastStart = 0, backoff = 1000, stopping = false, timer = null;
   const start = () => {
     lastStart = Date.now();
@@ -1481,6 +1517,7 @@ else {
   await loadJobs();
   await initSprites({ dir: SPRITES, run, ffmpeg: FFMPEG, ffprobe: FFPROBE, log });
   await initBackgrounds({ dir: BACKGROUNDS, run, ffmpeg: FFMPEG, ffprobe: FFPROBE, log, encoder: caps.x264 ? 'libx264' : caps.h264 });
+  await initMidi({ root: ROOT, cacheDir: CACHE, run, ffmpeg: FFMPEG, log });
 
   const server = http.createServer((req, res) => {
     handle(req, res).catch((e) => {

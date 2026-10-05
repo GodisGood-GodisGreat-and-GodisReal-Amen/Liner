@@ -9,6 +9,7 @@ Everything runs on your own computer: a zero-dependency Node server plus a page 
 ## What it does
 
 - **Drop songs in, get a video out.** MP3, FLAC, WAV, AIFF, M4A, OGG and more, or the sound of a video file. Titles, artists and embedded covers are read from the tags; a missing cover becomes a generated tile.
+- **MIDI files too.** A `.mid` file is rendered to audio on import, with FluidSynth and a SoundFont if you have them, the General MIDI synthesizer built into macOS, or Liner's own built-in synthesizer that needs nothing installed. Its notes become the cover: a piano roll.
 - **Fetch from a link.** Paste YouTube or SoundCloud links (songs, playlists, sets); `yt-dlp` downloads the best audio with its artwork and you pick what goes in.
 - **Find cover art automatically.** One click searches Apple Music, Deezer and the Cover Art Archive, ranks the candidates and shows real pixel sizes. No accounts, no keys.
 - **Trim, crossfade, reorder.** Sample-exact trims with a waveform, optional fades, trim-to-silence and snap-to-beats; equal-power crossfades; drag to reorder or sort by title, artist, length, tempo or energy.
@@ -57,7 +58,7 @@ The page needs a Chromium browser (Chrome, Edge, Brave, Arc…) for GPU encoding
 
 ## Privacy and network use
 
-Liner listens on `127.0.0.1` only and refuses requests from other origins. It talks to the internet in exactly three cases, all started by you: the cover art finder queries the iTunes Search API, Deezer and MusicBrainz/Cover Art Archive; *Add from a link* runs `yt-dlp`; a song's *own video* for a linked song is fetched with `yt-dlp`. Nothing is sent anywhere otherwise, there is no telemetry, and all working data stays in the project folder (`.cache/`, `Exports/`, `Downloads/`, `Mixes/`), which Git ignores.
+Liner listens on `127.0.0.1` only and refuses requests from other origins. It talks to the internet in exactly three cases, all started by you: the cover art finder queries the iTunes Search API, Deezer and MusicBrainz/Cover Art Archive; *Add from a link* runs `yt-dlp`; a song's *own video* for a linked song is fetched with `yt-dlp`. MIDI files are rendered locally. Nothing is sent anywhere otherwise, there is no telemetry, and all working data stays in the project folder (`.cache/`, `Exports/`, `Downloads/`, `Mixes/`), which Git ignores.
 
 ## License
 

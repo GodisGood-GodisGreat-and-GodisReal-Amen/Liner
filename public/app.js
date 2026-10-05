@@ -9,8 +9,8 @@ const icon = (name) => `<svg aria-hidden="true"><use href="#i-${name}"/></svg>`;
 // yields to the event loop without the 1 s timer throttling browsers apply to background tabs
 const nextFrame = () => new Promise((r) => { const ch = new MessageChannel(); ch.port1.onmessage = () => r(); ch.port2.postMessage(0); });
 const fmtBytes = (n) => (n >= 1e9 ? (n / 1e9).toFixed(2) + ' GB' : n >= 1e6 ? (n / 1e6).toFixed(1) + ' MB' : Math.round(n / 1e3) + ' KB');
-const AUDIO_EXT = /\.(mp3|flac|wav|wave|aif|aiff|aifc|m4a|m4b|aac|ogg|oga|opus|wma|caf|alac|mp4)$/i;
-const APP_VERSION = '1.0.0'; // must match server.mjs; an older server (or an older page) is told apart at start
+const AUDIO_EXT = /\.(mp3|flac|wav|wave|aif|aiff|aifc|m4a|m4b|aac|ogg|oga|opus|wma|caf|alac|mp4|mid|midi|kar|rmi|smf)$/i; // MIDI files are rendered to sound by the server
+const APP_VERSION = '1.1.0'; // must match server.mjs; an older server (or an older page) is told apart at start
 const cmpVersion = (a, b) => { const A = String(a).split('.').map(Number), B = String(b).split('.').map(Number); for (let i = 0; i < Math.max(A.length, B.length); i++) { const d = (A[i] || 0) - (B[i] || 0); if (d) return d; } return 0; };
 const IS_MAC = /Mac|iPhone|iPad/.test(navigator.platform || '') || /Macintosh/.test(navigator.userAgent);
 const IS_WIN = /Win/.test(navigator.platform || '');
@@ -32,7 +32,7 @@ const defaultState = () => ({
   viz: { style: 'off', place: 'under-art', size: VIZ_SIZE.def, color: 'white', labels: true, labelSize: 'large', guides: true, mirror: false, level: 1, x: 0.3, y: 0.72, w: 0.4 },
   captions: [], logo: { id: null, name: '', place: 'top-right', size: 0.08, opacity: 0.9, x: 0.85, y: 0.12 },
 });
-const cleanSong = (s) => ({ id: s.id, fileName: s.fileName || '', title: s.title || '', artist: s.artist || '', album: s.album || '', duration: +s.duration || 0, ready: !!s.ready, error: s.error || null, cover: !!s.cover, coverVersion: s.coverVersion || 0, customCover: !!s.customCover, coverMode: s.coverMode || (s.cover ? 'embedded' : 'none'), coverInfo: s.coverInfo || null, samples: s.samples || null, dancer: s.dancer === 'on' || s.dancer === 'off' ? s.dancer : undefined, trim: s.trim && typeof s.trim === 'object' ? { start: Math.max(0, +s.trim.start || 0), end: s.trim.end == null ? null : +s.trim.end, fade: !!s.trim.fade } : null,
+const cleanSong = (s) => ({ id: s.id, fileName: s.fileName || '', title: s.title || '', artist: s.artist || '', album: s.album || '', duration: +s.duration || 0, ready: !!s.ready, error: s.error || null, cover: !!s.cover, coverVersion: s.coverVersion || 0, customCover: !!s.customCover, coverMode: s.coverMode || (s.cover ? 'embedded' : 'none'), coverInfo: s.coverInfo || null, midi: s.midi || null, samples: s.samples || null, dancer: s.dancer === 'on' || s.dancer === 'off' ? s.dancer : undefined, trim: s.trim && typeof s.trim === 'object' ? { start: Math.max(0, +s.trim.start || 0), end: s.trim.end == null ? null : +s.trim.end, fade: !!s.trim.fade } : null,
   // the song's own video (from the server) and what the song does with video and background
   hasVideo: !!s.hasVideo, videoSource: s.videoSource === 'file' || s.videoSource === 'link' ? s.videoSource : null, ownVideo: s.ownVideo || null, ownVideoStatus: ['ready', 'preparing', 'error'].includes(s.ownVideoStatus) ? s.ownVideoStatus : 'none', ownVideoError: s.ownVideoError || null,
   volume: clamp(+s.volume || 0, -12, 6),
@@ -280,7 +280,13 @@ function watchReadiness() {
     for (const s of pending) {
       try {
         const m = await api.song(s.id);
-        if (m.ready || m.error) { Object.assign(s, { ready: m.ready, error: m.error, duration: m.duration, samples: m.samples }); syncVideoFields(s, m); updateRow(s); invalidate(); }
+        if (m.ready || m.error) { // a MIDI song gains its piano-roll cover while it is being prepared
+          const coverChanged = m.cover !== s.cover || (m.coverVersion || 0) !== (s.coverVersion || 0);
+          Object.assign(s, { ready: m.ready, error: m.error, duration: m.duration, samples: m.samples, midi: m.midi || null, cover: m.cover, coverVersion: m.coverVersion, customCover: m.customCover, coverMode: m.coverMode, coverInfo: m.coverInfo });
+          syncVideoFields(s, m);
+          if (coverChanged) hydrateSong(s);
+          updateRow(s); invalidate();
+        }
       } catch (e) {
         if (/Unknown song/.test(e.message)) { s.error = 'Missing from cache'; updateRow(s); invalidate(); }
       }
@@ -455,7 +461,9 @@ function updateRow(s) {
   else if (s.error) { dur.textContent = 'Error'; dur.dataset.tip = s.error; }
   else if (!s.ready) dur.innerHTML = `<span>${formatTime(songLength(s))}</span><svg class="spin" data-tip="Preparing audio">${'<use href="#i-spinner"/>'}</svg>`;
   else {
-    const mark = state.dancers.length && dancerActive(s, state.dance) === true ? '<svg class="dance-mark" data-tip="The dancers appear on this track"><use href="#i-dancer"/></svg>' : '';
+    const esc = (t) => String(t).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+    const midi = s.midi ? `<span class="midi-mark" data-tip="${esc(s.midi.about ? `From a MIDI file, rendered with ${s.midi.about}` : 'From a MIDI file')}">MIDI</span>` : '';
+    const mark = midi + (state.dancers.length && dancerActive(s, state.dance) === true ? '<svg class="dance-mark" data-tip="The dancers appear on this track"><use href="#i-dancer"/></svg>' : '');
     if (s.trim) { dur.innerHTML = `${mark}<svg class="trim-mark"><use href="#i-scissors"/></svg><span></span>`; dur.lastChild.textContent = formatTime(songLength(s)); dur.dataset.tip = `Trimmed from ${formatTime(s.duration)}`; }
     else { dur.innerHTML = `${mark}<span></span>`; dur.lastChild.textContent = formatTime(s.duration); delete dur.dataset.tip; }
   }
@@ -3333,7 +3341,7 @@ function updateHistoryButtons() {
   historyUI.undo.dataset.tip = u ? `Undo ${u} (${KEYS('⌘Z')})` : 'Nothing to undo';
   historyUI.redo.dataset.tip = r ? `Redo ${r} (${KEYS('⇧⌘Z')})` : 'Nothing to redo';
 }
-const RUNTIME_SONG_KEYS = ['image', 'palette', 'analysis', 'spectrum', 'waveform', 'analysisRetried', 'ready', 'error', 'duration', 'samples', 'uploading', 'cover', 'coverVersion', 'customCover', 'coverMode', 'coverInfo', 'hasVideo', 'videoSource', 'ownVideo', 'ownVideoStatus', 'ownVideoError'];
+const RUNTIME_SONG_KEYS = ['image', 'palette', 'analysis', 'spectrum', 'waveform', 'analysisRetried', 'ready', 'error', 'duration', 'samples', 'uploading', 'cover', 'coverVersion', 'customCover', 'coverMode', 'coverInfo', 'midi', 'hasVideo', 'videoSource', 'ownVideo', 'ownVideoStatus', 'ownVideoError'];
 function applySnapshot(json) {
   history.restoring = true;
   try {
@@ -3490,7 +3498,7 @@ window.addEventListener('resize', () => { refreshSegs(); if (danceOpen) renderDa
     const byId = new Map(list.map((m) => [m.id, m]));
     const missing = state.songs.filter((s) => !byId.has(s.id));
     if (missing.length) { state.songs = state.songs.filter((s) => byId.has(s.id)); toast(missing.length === 1 ? 'One song was missing from the cache and was removed.' : `${missing.length} songs were missing from the cache and were removed.`, { error: true }); }
-    for (const s of state.songs) { const m = byId.get(s.id); Object.assign(s, { ready: m.ready, error: m.error, duration: m.duration, samples: m.samples, cover: m.cover, coverVersion: m.coverVersion, customCover: m.customCover, coverMode: m.coverMode, coverInfo: m.coverInfo, fileName: m.fileName }); syncVideoFields(s, m); }
+    for (const s of state.songs) { const m = byId.get(s.id); Object.assign(s, { ready: m.ready, error: m.error, duration: m.duration, samples: m.samples, cover: m.cover, coverVersion: m.coverVersion, customCover: m.customCover, coverMode: m.coverMode, coverInfo: m.coverInfo, midi: m.midi || null, fileName: m.fileName }); syncVideoFields(s, m); }
   } catch { /* offline: keep local state */ }
   renderTracks();
   await Promise.all(state.songs.map(hydrateSong));

@@ -35,6 +35,8 @@ Both panels can be resized by dragging their inner edge; double-click the edge t
 
 Title, artist and album come from the tags. A missing title falls back to the file name ("03 - Artist - Title.flac" is understood). An embedded cover is extracted; without one the song gets a generated tile in colours derived from its title.
 
+**MIDI files** (`.mid`, `.midi`, `.kar`, `.rmi`) are accepted too. Because they hold notes rather than sound, Liner renders them to audio as the song is prepared: with FluidSynth and a SoundFont when both are installed, otherwise with the General MIDI synthesizer built into macOS, otherwise with its own built-in synthesizer. The row shows a small *MIDI* mark; its tooltip names the synthesizer. The sequence name inside the file becomes the title when there is one, and the notes are drawn as a **piano roll** that serves as the cover until you choose another (*Use the original art* brings the piano roll back). See [Getting started](getting-started.md#midi-files) for the synthesizers and how to get better sound.
+
 Each song is decoded once on the server: a sample-exact 48 kHz 24-bit copy for the final soundtrack and a small preview for the browser. A row shows a spinner until that is done. The **Export** button stays dimmed until at least one song is ready.
 
 **From a link.** Click the link button, or paste a YouTube or SoundCloud URL anywhere in the window (⌘V). Each song, playlist or set is fetched with `yt-dlp` at the best audio quality offered, decoded to 24-bit WAV into `Downloads/` with its artwork, and listed in the sheet with **Add** and delete buttons, so you choose what goes into the tracks. Paste several links, one per line, and press **Fetch** (⌘Enter in the text box). **Add all ready** adds everything that has finished. Downloaded files stay in `Downloads/` until you delete them from this sheet; adding one copies it into the cache. The sheet says so if `yt-dlp` is not installed.
@@ -217,7 +219,7 @@ Press **?** or the keyboard button in the top bar for this list inside the app.
 | `Exports/` | finished videos |
 | `Downloads/` | WAVs and thumbnails fetched from links |
 | `Mixes/` | portable copies written by *Save mix…* |
-| `.cache/songs/<id>/` | a song's original file, `meta.json`, decoded PCM, preview, covers, waveform and spectrum |
+| `.cache/songs/<id>/` | a song's original file, `meta.json`, decoded PCM, preview, covers, waveform and spectrum (and `render.wav` for a MIDI file) |
 | `.cache/sprites/<id>/` | a dancer's sources, frame atlas and thumbnail |
 | `.cache/backgrounds/<id>/` | a background video, its decoder stream and poster |
 | `.cache/logos/`, `.cache/art/` | logos and cover-art candidates |

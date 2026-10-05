@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.0 — 2026-10-05
+
+- **MIDI files** (`.mid`, `.midi`, `.kar`, `.rmi`) can be added like any song. They are rendered to audio on import by the best synthesizer available: FluidSynth with a SoundFont, the General MIDI synthesizer built into macOS (through a small Swift helper compiled on first use), or a new built-in synthesizer with nothing to install. The notes are drawn as a piano-roll cover, the file's sequence name becomes the title, and the row carries a *MIDI* mark that names the synthesizer. `LINER_MIDI`, `LINER_SOUNDFONT` and `FLUIDSYNTH` choose and locate the renderers.
+
 ## 1.0.0 — 2026-10-04
 
 First public release, in the public domain (The Unlicense).

@@ -99,13 +99,13 @@
       <div class="empty" id="tracksEmpty">
         <div class="empty-art"><svg><use href="#i-music"/></svg></div>
         <p class="empty-title">No songs yet</p>
-        <p class="empty-sub">Drop audio files anywhere in the window, pick them from your library, or paste a YouTube or SoundCloud link.</p>
+        <p class="empty-sub">Drop audio or MIDI files anywhere in the window, pick them from your library, or paste a YouTube or SoundCloud link.</p>
         <div class="empty-actions"><button class="btn btn-secondary" id="addBtn2">Add songs</button><button class="btn btn-secondary" id="linkBtn2"><svg><use href="#i-link"/></svg>From a link</button></div>
-        <p class="empty-formats">MP3 · FLAC · WAV · AIFF · M4A · OGG · or the sound of a video</p>
+        <p class="empty-formats">MP3 · FLAC · WAV · AIFF · M4A · OGG · MIDI · or the sound of a video</p>
       </div>
     </div>
     <div class="drop-hint" id="dropHint" aria-hidden="true"><div class="drop-hint-card"><svg><use href="#i-plus"/></svg><span>Drop to add</span></div></div>
-    <input type="file" id="fileInput" accept="audio/*,video/*,.mp3,.flac,.wav,.aif,.aiff,.m4a,.aac,.ogg,.opus,.wma,.caf,.mp4,.m4v,.mov,.webm,.mkv" multiple hidden>
+    <input type="file" id="fileInput" accept="audio/*,video/*,audio/midi,.mp3,.flac,.wav,.aif,.aiff,.m4a,.aac,.ogg,.opus,.wma,.caf,.mid,.midi,.kar,.rmi,.mp4,.m4v,.mov,.webm,.mkv" multiple hidden>
     <input type="file" id="coverInput" accept="image/*" hidden>
     <div class="resize-handle" data-panel="tracks" title="Drag to resize · double-click to reset"></div>
     <input type="file" id="dancerInput" accept="image/*,video/*,.gif,.png,.apng,.webp,.jpg,.jpeg,.mp4,.m4v,.mov,.webm" multiple hidden>

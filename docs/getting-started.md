@@ -9,6 +9,7 @@ This guide takes you from nothing to your first exported mix video.
 | **Node.js 18 or newer** | runs the local server | `node --version` |
 | **FFmpeg** (`ffmpeg` and `ffprobe`) | decodes songs, builds sprites, writes the final MP4 | `ffmpeg -version` |
 | **yt-dlp** (optional) | the *Add from a link* feature | `yt-dlp --version` |
+| **FluidSynth + a SoundFont** (optional) | the best sound for MIDI files; without them Liner uses the macOS synthesizer or its own | `fluidsynth --version` |
 | **A Chromium browser** | Chrome, Edge, Brave, Arc… for GPU encoding and video backgrounds | |
 
 ### Installing FFmpeg
@@ -48,6 +49,18 @@ The line tells you which encoders were found. `video - / -` means FFmpeg has no 
 Open **http://localhost:8865** in your browser. Keep the terminal open while you work; **Ctrl-C** stops the server.
 
 The command runs a small supervisor that restarts the server whenever one of its source files changes on disk (after the file parses and once no export or download is in flight), so updating the code never needs a manual restart. `LINER_NO_SUPERVISOR=1 node server.mjs` (or `npm run start:plain`) runs the server directly.
+
+### MIDI files
+
+A `.mid` file holds notes, not sound, so Liner renders it to audio when you add it. It picks the best synthesizer it finds, in this order:
+
+1. **FluidSynth with a SoundFont**, when both are installed. Install FluidSynth (`brew install fluid-synth`, `sudo apt install fluidsynth`, `winget install FluidSynth.FluidSynth`) and put a General MIDI SoundFont (`.sf2` or `.sf3`, such as *FluidR3_GM* or *GeneralUser GS*) in a `soundfonts/` folder next to the code, or point `LINER_SOUNDFONT` at it. Debian and Ubuntu's `fluid-soundfont-gm` package installs one where Liner looks.
+2. **The General MIDI synthesizer built into macOS** (the instrument bank QuickTime uses). Liner compiles a small helper from `tools/midi-render.swift` the first time, which needs the Xcode Command Line Tools that Homebrew already requires.
+3. **Liner's own synthesizer**, which needs nothing at all and runs everywhere.
+
+`LINER_MIDI=builtin` (or `coreaudio`, `fluidsynth`) forces one of them. The song's row carries a small *MIDI* mark whose tooltip says which synthesizer was used; its cover is a piano roll of the notes until you choose another.
+
+Three small MIDI files to try are in `docs/demo/` (a band piece with a tempo change, a sparse piano piece, a chiptune run).
 
 ## 4. Your first mix
 
@@ -90,6 +103,9 @@ If the server was running, the supervisor restarts it. Reload the page afterward
 | `FFMPEG`, `FFPROBE` | `ffmpeg`, `ffprobe` | paths to the binaries when they are not on the PATH |
 | `YTDLP` | `yt-dlp` | path to yt-dlp; Liner also looks in `/opt/homebrew/bin`, `/usr/local/bin` and `~/.local/bin` |
 | `LINER_NO_SUPERVISOR` | unset | `1` runs the server without the auto-restarting supervisor |
+| `LINER_MIDI` | unset | `fluidsynth`, `coreaudio` or `builtin`: which synthesizer renders MIDI files (the best available otherwise) |
+| `LINER_SOUNDFONT` | unset | path to the `.sf2`/`.sf3` SoundFont for FluidSynth (otherwise `soundfonts/` next to the code and the usual system folders are searched) |
+| `FLUIDSYNTH` | `fluidsynth` | path to the FluidSynth binary |
 
 Example: `PORT=9000 FFMPEG=/opt/ffmpeg/bin/ffmpeg npm start`.
 
